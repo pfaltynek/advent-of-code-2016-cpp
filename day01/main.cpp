@@ -1,8 +1,8 @@
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <algorithm>
 
 const std::string divider = ", ";
 
@@ -115,7 +115,7 @@ int main(void) {
 			n22 = std::max(trace_route[cnt - 1][0], trace_route[cnt][0]);
 			e22 = std::max(trace_route[cnt - 1][1], trace_route[cnt][1]);
 
-			for (int i = 1; i < (cnt-1); i++) {
+			for (int i = 1; i < (cnt - 1); i++) {
 				n11 = std::min(trace_route[i - 1][0], trace_route[i][0]);
 				e11 = std::min(trace_route[i - 1][1], trace_route[i][1]);
 				n12 = std::max(trace_route[i - 1][0], trace_route[i][0]);
@@ -151,8 +151,145 @@ int main(void) {
 				}
 
 				if (n & e) {
+					bool way1asc, way2asc, way1n, way2n;
+					int way1start, way1end, way2start, way2end, way1const, way2const;
 
-					int z = 6;
+					n11 = trace_route[i - 1][0];
+					e11 = trace_route[i - 1][1];
+					n12 = trace_route[i][0];
+					e12 = trace_route[i][1];
+
+					n21 = trace_route[cnt - 1][0];
+					e21 = trace_route[cnt - 1][1];
+					n22 = trace_route[cnt][0];
+					e22 = trace_route[cnt][1];
+
+					if (n11 == n12) {
+						way1n = false;
+						way1start = e11;
+						way1end = e12;
+						way1const = n11;
+					} else {
+						way1n = true;
+						way1start = n11;
+						way1end = n12;
+						way1const = e11;
+					}
+					way1asc = (way1start < way1end);
+
+					if (n21 == n22) {
+						way2n = false;
+						way2start = e21;
+						way2end = e22;
+						way2const = n21;
+					} else {
+						way2n = true;
+						way2start = n21;
+						way2end = n22;
+						way2const = e21;
+					}
+					way2asc = (way2start < way2end);
+
+					if (way1asc) {
+						if (way2asc) {
+							for (int i = way1start; i <= way1end; i++) {
+								for (int j = way2start; j <= way2end; j++) {
+									if (way1n == way2n) {
+										if ((i == j) &&
+											(way1const == way2const)) {
+											result2 = i + way1const;
+											part2_done = true;
+											break;
+										}
+									} else {
+										if ((i == way2const) &&
+											(way1const == j)) {
+											result2 = i + way2const;
+											part2_done = true;
+											break;
+										}
+									}
+								}
+								if (part2_done) {
+									break;
+								}
+							}
+						} else {
+							for (int i = way1start; i <= way1end; i++) {
+								for (int j = way2start; j >= way2end; j--) {
+									if (way1n == way2n) {
+										if ((i == j) &&
+											(way1const == way2const)) {
+											result2 = i + way1const;
+											part2_done = true;
+											break;
+										}
+									} else {
+										if ((i == way2const) &&
+											(way1const == j)) {
+											result2 = abs(i) + abs(way1const);
+											part2_done = true;
+											break;
+										}
+									}
+								}
+								if (part2_done) {
+									break;
+								}
+							}
+						}
+					} else {
+						if (way2asc) {
+							for (int i = way1start; i >= way1end; i--) {
+								for (int j = way2start; j <= way2end; j++) {
+									if (way1n == way2n) {
+										if ((i == j) &&
+											(way1const == way2const)) {
+											result2 = i + way1const;
+											part2_done = true;
+											break;
+										}
+									} else {
+										if ((i == way2const) &&
+											(way1const == j)) {
+											result2 = i + way2const;
+											part2_done = true;
+											break;
+										}
+									}
+								}
+								if (part2_done) {
+									break;
+								}
+							}
+						} else {
+							for (int i = way1start; i >= way1end; i--) {
+								for (int j = way2start; j >= way2end; j--) {
+									if (way1n == way2n) {
+										if ((i == j) &&
+											(way1const == way2const)) {
+											result2 = i + way1const;
+											part2_done = true;
+											break;
+										}
+									} else {
+										if ((i == way2const) &&
+											(way1const == j)) {
+											result2 = i + way2const;
+											part2_done = true;
+											break;
+										}
+									}
+								}
+								if (part2_done) {
+									break;
+								}
+							}
+						}
+					}
+				}
+				if (part2_done){
+					break;
 				}
 			}
 		}
