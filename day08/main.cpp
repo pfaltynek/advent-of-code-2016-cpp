@@ -9,17 +9,30 @@ const std::string row_col_divier = " by ";
 const std::string rect_divier = "x";
 const int MAX_COLUMN = 50;
 const int MAX_ROW = 6;
+#define DEBUG_OUTPUT 1 
+unsigned char display[MAX_COLUMN][MAX_ROW];
+
+void ShowDisplay(void) {
+	std::cout << std::endl;
+	for (int j = 0; j < MAX_ROW; j++) {
+		for (int i = 0; i < MAX_COLUMN; i++) {
+			std::cout << (display[i][j] ? '#' : '.');
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+}
+
 int main(void) {
 	std::ifstream input;
 	std::string line;
 	int result1, result2, cnt;
-	unsigned char display[MAX_COLUMN][MAX_ROW];
 
 	std::cout << "=== Advent of Code 2016 - day 8 ====" << std::endl;
 	std::cout << "--- part 1 ---" << std::endl;
 
-	// input.open("input.txt", std::ifstream::in);
-	input.open("input-test.txt", std::ifstream::in);
+	input.open("input.txt", std::ifstream::in);
+	//input.open("input-test.txt", std::ifstream::in);
 
 	if (input.fail()) {
 		std::cout << "Error opening input file.\n";
@@ -30,13 +43,16 @@ int main(void) {
 	result1 = 0;
 	result2 = 0;
 	memset(display, sizeof(display), 0);
+	#if DEBUG_OUTPUT
+	ShowDisplay();
+	#endif
 	while (std::getline(input, line)) {
 		std::string part, l, r;
 		int pos, v1, v2, tmp;
 
 		cnt++;
 		if (line.find(row_rotate) == 0) {
-			part = line.substr(sizeof(row_rotate));
+			part = line.substr(row_rotate.size());
 			pos = part.find(row_col_divier);
 			if (pos == std::string::npos) {
 				std::cout
@@ -45,7 +61,7 @@ int main(void) {
 				return -1;
 			}
 			l = part.substr(0, pos);
-			r = part.substr(pos + sizeof(row_col_divier));
+			r = part.substr(pos + row_col_divier.size());
 			if (l.empty() || r.empty()) {
 				std::cout << "Empty row rotation instruction parameter at line "
 						  << cnt << std::endl;
@@ -61,14 +77,13 @@ int main(void) {
 			}
 			for (int j = 0; j < v2; j++) {
 				tmp = display[MAX_COLUMN - 1][v1];
-				for (int i = 0; i < MAX_COLUMN - 1; i++) {
-					tmp = display[(i + 1) % MAX_COLUMN][v1];
-					display[i + 1][v1] = display[i][v1];
+				for (int i = MAX_COLUMN - 1; i > 0; i--) {
+					display[i][v1] = display[i - 1][v1];
 				}
 				display[0][v1] = tmp;
 			}
 		} else if (line.find(col_rotate) == 0) {
-			part = line.substr(sizeof(col_rotate));
+			part = line.substr(col_rotate.size());
 			pos = part.find(row_col_divier);
 			if (pos == std::string::npos) {
 				std::cout
@@ -77,7 +92,7 @@ int main(void) {
 				return -1;
 			}
 			l = part.substr(0, pos);
-			r = part.substr(pos + sizeof(row_col_divier));
+			r = part.substr(pos + row_col_divier.size());
 			if (l.empty() || r.empty()) {
 				std::cout
 					<< "Empty column rotation instruction parameter at line "
@@ -94,14 +109,13 @@ int main(void) {
 			}
 			for (int j = 0; j < v2; j++) {
 				tmp = display[v1][MAX_ROW - 1];
-				for (int i = 0; i < MAX_ROW - 1; i++) {
-					tmp = display[v1][(i + 1) % MAX_ROW];
-					display[v1][i + 1] = display[v1][i];
+				for (int i = MAX_ROW - 1; i > 0; i--) {
+					display[v1][i] = display[v1][i - 1];
 				}
 				display[v1][0] = tmp;
 			}
 		} else if (line.find(rect) == 0) {
-			part = line.substr(sizeof(rect));
+			part = line.substr(rect.size());
 			pos = part.find(rect_divier);
 			if (pos == std::string::npos) {
 				std::cout << "Unknown rectangle instruction parameters at line "
@@ -109,7 +123,7 @@ int main(void) {
 				return -1;
 			}
 			l = part.substr(0, pos);
-			r = part.substr(pos + sizeof(rect_divier));
+			r = part.substr(pos + rect_divier.size());
 			if (l.empty() || r.empty()) {
 				std::cout << "Empty rectangle instruction parameter at line "
 						  << cnt << std::endl;
@@ -124,13 +138,14 @@ int main(void) {
 			}
 			for (int i = 0; i < v1; i++) {
 				for (int j = 0; j < v2; j++) {
-					display[v1][v2] = 1;
+					display[i][j] = 1;
 				}
 			}
 		} else {
 			std::cout << "Unknown instruction at line " << cnt << std::endl;
 			return -1;
 		}
+		ShowDisplay();
 	}
 
 	if (input.is_open()) {
