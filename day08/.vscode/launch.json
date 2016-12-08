@@ -1,0 +1,58 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "C++ Launch",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceRoot}/a.out",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceRoot}",
+			"environment": [],
+			"externalConsole": true,
+			"linux": {
+				"MIMode": "gdb"
+			},
+			"osx": {
+				"MIMode": "lldb"
+			},
+			"windows": {
+				"MIMode": "gdb"
+			}
+		},
+		{
+			"name": "C++ Attach",
+			"type": "cppdbg",
+			"request": "attach",
+			"program": "${workspaceRoot}/a.out",
+			"processId": "${command.pickProcess}",
+			"linux": {
+				"MIMode": "gdb"
+			},
+			"osx": {
+				"MIMode": "lldb"
+			},
+			"windows": {
+				"MIMode": "gdb"
+			}
+		},
+		{
+			"name": "C++ Launch (Windows)",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"program": "${workspaceRoot}/out/app.exe",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceRoot}",
+			"environment": [],
+			"externalConsole": false
+		},
+		{
+			"name": "C++ Attach (Windows)",
+			"type": "cppvsdbg",
+			"request": "attach",
+			"processId": "${command.pickProcess}"
+		}
+	]
+}
