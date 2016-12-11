@@ -3,11 +3,21 @@
 #include <iostream>
 #include <string>
 
+bool GetDecompressedLength(std::string input, int &part1, int &part2) {
+	std::string output, marker, repeat_part;
+	int result1, result2, cnt, repeat_len, repeat_cnt;
+
+	return false;
+}
+
+bool Decompress(std::string& input, int &part1, int &part2){
+	return false;
+}
+
 int main(void) {
 	std::ifstream input;
 	std::string line;
-	int result1, result2, cnt, repeat_len, repeat_cnt;
-	std::string output, marker, repeat_part;
+	int result1, result2;
 
 	std::cout << "=== Advent of Code 2016 - day 9 ====" << std::endl;
 	std::cout << "--- part 1 ---" << std::endl;
@@ -20,10 +30,8 @@ int main(void) {
 		return -1;
 	}
 
-	cnt = 0;
 	result1 = 0;
 	result2 = 0;
-	output.clear();
 
 	while (std::getline(input, line)) {
 		std::string block;
