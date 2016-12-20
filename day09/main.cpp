@@ -1,65 +1,64 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <string>
 
-bool Decompress(std::string &input, int &part1size, int &part2size, bool &packed_data_found) {
-	int pos1, pos2, posx, repeat_len, repeat_cnt;
-	int cnt1, cnt2;
-	std::string marker, block;
-	bool tmp;
+bool DecodeMarker(std::string marker, int &length, int &count) {
+	std::regex regex_number("\\d+");
+	std::smatch sm;
 
-	pos1 = input.find('(');
-	if (pos1 != std::string::npos) {
-		pos2 = input.find(')', pos1);
-		if (pos2 == std::string::npos) {
-			std::cout << "Invalid marker" << std::endl;
-			return false;
+	if (regex_search(marker, sm, regex_number)) {
+		length = atoi(sm[0].str().c_str());
+		marker = sm.suffix().str();
+
+		if (regex_search(marker, sm, regex_number)) {
+			count = atoi(sm[0].str().c_str());
+			return true;
 		}
-
-		part1size += pos1;
-		part2size += pos1;
-
-		marker = input.substr(pos1 + 1, pos2 - pos1 - 1);
-		input = input.substr(pos2 + 1);
-		posx = marker.find('x');
-		if (posx == std::string::npos) {
-			std::cout << "Invalid marker" << std::endl;
-			return false;
-		}
-		repeat_len = atoi(marker.substr(0, posx).c_str());
-		repeat_cnt = atoi(marker.substr(posx + 1, std::string::npos).c_str());
-		block = input.substr(0, repeat_len);
-		input = input.substr(repeat_len, std::string::npos);
-		part1size += repeat_cnt * repeat_len;
-		cnt1 = 0;
-		cnt2 = 0;
-
-		do {
-			if (!Decompress(block, cnt1, cnt2, tmp)) {
-				return false;
-			}
-		} while (tmp);
-
-		part2size += repeat_cnt * cnt2;
-
-		packed_data_found = true;
-	} else {
-		part1size += input.size();
-		part2size += input.size();
-		input.clear();
-
-		packed_data_found = false;
 	}
 
-	// no error
+	return false;
+}
+
+bool Unpack(std::string &input, long long &format1size, long long &format2size) {
+	long long cnt1, cnt2;
+	int	repeat_len, repeat_cnt;
+	std::regex regex_marker("[(]\\d+[xX]\\d+[)]");
+	std::smatch sm;
+	std::string marker, block;
+
+	while (regex_search(input, sm, regex_marker)) {
+		format1size += sm.prefix().str().size();
+		format2size += sm.prefix().str().size();
+
+		marker = sm[0];
+
+		if (!DecodeMarker(marker, repeat_len, repeat_cnt)) {
+			return false;
+		}
+		input = sm.suffix().str();
+		block = input.substr(0, repeat_len);
+		input = input.substr(repeat_len);
+		format1size += repeat_len * repeat_cnt;
+		cnt1 = 0;
+		cnt2 = 0;
+		if (!Unpack(block, cnt1, cnt2)) {
+			return false;
+		}
+		format2size += repeat_cnt * cnt2;
+	}
+	format1size += input.size();
+	format2size += input.size();
+
 	return true;
 }
+
 
 int main(void) {
 	std::ifstream input;
 	std::string line, packed;
-	int result1, result2, position;
+	long long result1, result2;
 	bool packed_data_found;
 
 	std::cout << "=== Advent of Code 2016 - day 9 ====" << std::endl;
@@ -76,51 +75,37 @@ int main(void) {
 
 	result1 = 0;
 	result2 = 0;
-	position = 0;
 	packed.clear();
 
 	while (std::getline(input, line)) {
 		packed += line;
-		/*
-				std::string block;
-				int pos1, pos2, posx;
-
-				cnt++;
-				pos1 = line.find('(');
-				while (pos1 != std::string::npos) {
-					pos2 = line.find(')', pos1);
-					if (pos2 == std::string::npos) {
-						std::cout << "Invalid marker at line " << cnt << std::endl;
-						return -1;
-					}
-					output += line.substr(0, pos1);
-					marker = line.substr(pos1 + 1, pos2 - pos1 - 1);
-					line = line.substr(pos2 + 1);
-					posx = marker.find('x');
-					if (posx == std::string::npos) {
-						std::cout << "Invalid marker at line " << cnt << std::endl;
-						return -1;
-					}
-					repeat_len = atoi(marker.substr(0, posx).c_str());
-					repeat_cnt =
-						atoi(marker.substr(posx + 1, std::string::npos).c_str());
-					block = line.substr(0, repeat_len);
-					line = line.substr(repeat_len, std::string::npos);
-					for (int i = 0; i < repeat_cnt; i++) {
-						output += block;
-					}
-					pos1 = line.find('(');
-				}
-
-				output += line;
-				*/
 	}
 
-	do {
-		if (!Decompress(packed, result1, result2, packed_data_found)) {
-			return -1;
-		}
-	} while (packed_data_found);
+	if (!Unpack(packed, result1, result2)){
+		return -1;
+	}
+
+	/*
+	result1 = 0;
+	result2 = 0;
+	packed = "(3x3)XYZ";
+	Unpack(packed, result1, result2);
+
+	result1 = 0;
+	result2 = 0;
+	packed = "X(8x2)(3x3)ABCY";
+	Unpack(packed, result1, result2);
+
+	result1 = 0;
+	result2 = 0;
+	packed = "(27x12)(20x12)(13x14)(7x10)(1x12)A";
+	Unpack(packed, result1, result2);
+
+	result1 = 0;
+	result2 = 0;
+	packed = "(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN";
+	Unpack(packed, result1, result2);
+*/
 
 	if (input.is_open()) {
 		input.close();
