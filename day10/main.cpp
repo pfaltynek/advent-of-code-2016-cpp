@@ -4,57 +4,38 @@
 #include <map>
 #include <regex>
 #include <string>
+#include <vector>
 
 std::regex regex_number("\\d+");
 
-bool DecodeMarker(std::string marker, int &length, int &count) {
-	std::regex regex_number("\\d+");
+typedef enum { OUT_EMPTY,
+			   OUT_BOT,
+			   OUT_OUTPUT } OUT_TYPE;
+
+typedef struct {
+	int bot, low, high;
+	OUT_TYPE low_type, high_type;
+} BOT_INSTRUCTION;
+
+bool DecodeBotInstruction(std::string instruction, BOT_INSTRUCTION &info) {
+	std::regex bot_template("bot \\d+ gives low to (bot|output) \\d+ and high to (bot|output) \\d+");
+	std::regex low_bot("gives low to bot");
+	std::regex low_output("gives low to output");
+	std::regex high_bot("and high to bot");
+	std::regex high_output("and high to output");
 	std::smatch sm;
+	int bot_number;
 
-	if (regex_search(marker, sm, regex_number)) {
-		length = atoi(sm[0].str().c_str());
-		marker = sm.suffix().str();
+	if (regex_search(instruction, sm, bot_template)) {
+		if (regex_search(instruction, sm, regex_number)) {
+			bot_number = atoi(sm[0].str().c_str());
+			instruction = sm.suffix().str();
 
-		if (regex_search(marker, sm, regex_number)) {
-			count = atoi(sm[0].str().c_str());
 			return true;
 		}
 	}
 
 	return false;
-}
-
-bool Unpack(std::string &input, long long &format1size, long long &format2size) {
-	long long cnt1, cnt2;
-	int repeat_len, repeat_cnt;
-	std::regex regex_marker("[(]\\d+[xX]\\d+[)]");
-	std::smatch sm;
-	std::string marker, block;
-
-	while (regex_search(input, sm, regex_marker)) {
-		format1size += sm.prefix().str().size();
-		format2size += sm.prefix().str().size();
-
-		marker = sm[0];
-
-		if (!DecodeMarker(marker, repeat_len, repeat_cnt)) {
-			return false;
-		}
-		input = sm.suffix().str();
-		block = input.substr(0, repeat_len);
-		input = input.substr(repeat_len);
-		format1size += repeat_len * repeat_cnt;
-		cnt1 = 0;
-		cnt2 = 0;
-		if (!Unpack(block, cnt1, cnt2)) {
-			return false;
-		}
-		format2size += repeat_cnt * cnt2;
-	}
-	format1size += input.size();
-	format2size += input.size();
-
-	return true;
 }
 
 bool DecodeValueInstruction(std::string instruction, int &value, int &bot) {
@@ -64,8 +45,11 @@ bool DecodeValueInstruction(std::string instruction, int &value, int &bot) {
 	if (regex_search(instruction, sm, value_template)) {
 		if (regex_search(instruction, sm, regex_number)) {
 			value = atoi(sm[0].str().c_str());
-			
-			return true;
+			instruction = sm.suffix().str();
+			if (regex_search(instruction, sm, regex_number)) {
+				bot = atoi(sm[0].str().c_str());
+				return true;
+			}
 		}
 	}
 	return false;
@@ -75,7 +59,7 @@ int main(void) {
 	std::ifstream input;
 	std::string line;
 	int result1, result2, cnt, val1, val2, bot_number;
-	std::map<int, int> values;
+	std::map<int, std::vector<int>> values;
 
 	std::cout << "=== Advent of Code 2016 - day 10 ====" << std::endl;
 	std::cout << "--- part 1 ---" << std::endl;
@@ -93,17 +77,33 @@ int main(void) {
 	cnt = 0;
 
 	while (std::getline(input, line)) {
+		BOT_INSTRUCTION info;
+
 		cnt++;
 		switch (line[0]) {
 			case 'v':
 				if (DecodeValueInstruction(line, val1, bot_number)) {
-					values[bot_number] = val1;
+					if (values.find(bot_number) == values.end()) {
+						std::vector<int> list;
+
+						list.push_back(val1);
+						values[bot_number] = list;
+					} else {
+						values[bot_number].push_back(val1);
+					}
+
 				} else {
 					return -1;
 				}
 				break;
 			case 'b':
+				info.low_type = OUT_EMPTY;
+				info.high_type = OUT_EMPTY;
+				if (DecodeBotInstruction(line, info)) {
 
+				} else {
+					return -1;
+				}
 				break;
 			default:
 				std::cout << "Invalid instruction on line " << cnt << std::endl;
