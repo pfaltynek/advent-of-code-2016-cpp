@@ -12,30 +12,52 @@ typedef enum { OUT_EMPTY,
 			   OUT_BOT,
 			   OUT_OUTPUT } OUT_TYPE;
 
-typedef struct {
-	int bot, low, high;
+class Bot {
+  public:
+	Bot();
+	Bot(std::string instruction);
+	int GetId();
+	int GetLowValue();
+	int GetHighValue();
+	bool IsReady();
+	OUT_TYPE GetLowType();
+	OUT_TYPE GetHighType();
+
+  private:
+	int id, low, high;
 	OUT_TYPE low_type, high_type;
-} BOT_INSTRUCTION;
+};
 
-bool DecodeBotInstruction(std::string instruction, BOT_INSTRUCTION &info) {
-	std::regex bot_template("bot \\d+ gives low to (bot|output) \\d+ and high to (bot|output) \\d+");
-	std::regex low_bot("gives low to bot");
-	std::regex low_output("gives low to output");
-	std::regex high_bot("and high to bot");
-	std::regex high_output("and high to output");
+Bot::Bot() {
+	id = -1;
+	low = 0;
+	high = 0;
+	low_type = OUT_TYPE::OUT_EMPTY;
+	high_type = OUT_TYPE::OUT_EMPTY;
+}
+
+Bot::Bot(std::string instruction) {
+	std::regex regex_bot("bot");
+	std::regex regex_output("output");
+	std::regex regex_low("gives low to");
+	std::regex regex_high("and high to");
 	std::smatch sm;
-	int bot_number;
 
-	if (regex_search(instruction, sm, bot_template)) {
-		if (regex_search(instruction, sm, regex_number)) {
-			bot_number = atoi(sm[0].str().c_str());
-			instruction = sm.suffix().str();
+	regex_search(instruction, sm, regex_number);
+	id = atoi(sm[0].str().c_str());
+	instruction = sm.suffix().str();
 
-			return true;
-		}
+	if (regex_search(instruction, sm, regex_low)) {
+
+	} else {
 	}
+}
 
-	return false;
+bool CheckBotInstruction(std::string instruction) {
+	std::regex bot_template("bot \\d+ gives low to (bot|output) \\d+ and high to (bot|output) \\d+");
+	std::smatch sm;
+
+	return regex_search(instruction, sm, bot_template);
 }
 
 bool DecodeValueInstruction(std::string instruction, int &value, int &bot) {
@@ -77,8 +99,6 @@ int main(void) {
 	cnt = 0;
 
 	while (std::getline(input, line)) {
-		BOT_INSTRUCTION info;
-
 		cnt++;
 		switch (line[0]) {
 			case 'v':
@@ -97,9 +117,7 @@ int main(void) {
 				}
 				break;
 			case 'b':
-				info.low_type = OUT_EMPTY;
-				info.high_type = OUT_EMPTY;
-				if (DecodeBotInstruction(line, info)) {
+				if (CheckBotInstruction(line)) {
 
 				} else {
 					return -1;
