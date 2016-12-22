@@ -8,6 +8,9 @@
 
 std::regex regex_number("\\d+");
 
+const int part1_val1 = 61;
+const int part1_val2 = 17;
+
 typedef enum { OUT_EMPTY,
 			   OUT_BOT,
 			   OUT_OUTPUT } OUT_TYPE;
@@ -18,13 +21,17 @@ class Bot {
 	Bot(std::string instruction);
 	int GetId();
 	int GetLowValue();
+	int GetLowTarget();
+	int GetHighTarget();
 	int GetHighValue();
 	bool IsReady();
-	OUT_TYPE GetLowType();
-	OUT_TYPE GetHighType();
+	OUT_TYPE GetLowTargetType();
+	OUT_TYPE GetHighTargetType();
+	void SetValue(int value);
+	bool HandlesValues(int val1, int val2);
 
   private:
-	int id, low, high;
+	int id, low, high, val[2], val_cnt;
 	OUT_TYPE low_type, high_type;
 };
 
@@ -34,6 +41,7 @@ Bot::Bot() {
 	high = 0;
 	low_type = OUT_TYPE::OUT_EMPTY;
 	high_type = OUT_TYPE::OUT_EMPTY;
+	val_cnt = 0;
 }
 
 Bot::Bot(std::string instruction) {
@@ -42,16 +50,86 @@ Bot::Bot(std::string instruction) {
 	std::regex regex_low("gives low to");
 	std::regex regex_high("and high to");
 	std::smatch sm;
+	std::string strlow, strhigh;
 
+	val_cnt = 0;
+	val[0] = 0;
+	val[1] = 0;
 	regex_search(instruction, sm, regex_number);
 	id = atoi(sm[0].str().c_str());
 	instruction = sm.suffix().str();
 
-	if (regex_search(instruction, sm, regex_low)) {
+	regex_search(instruction, sm, regex_high);
+	strhigh = sm.suffix().str();
+	strlow = sm.prefix().str();
 
+	regex_search(strlow, sm, regex_low);
+	strlow = sm.suffix().str();
+
+	if (regex_search(strlow, sm, regex_bot)) {
+		low_type = OUT_TYPE::OUT_BOT;
 	} else {
+		regex_search(strlow, sm, regex_output);
+		low_type = OUT_TYPE::OUT_OUTPUT;
+	}
+	strlow = sm.suffix().str();
+	regex_search(strlow, sm, regex_number);
+	low = atoi(sm[0].str().c_str());
+
+	if (regex_search(strhigh, sm, regex_bot)) {
+		high_type = OUT_TYPE::OUT_BOT;
+	} else {
+		regex_search(strhigh, sm, regex_output);
+		high_type = OUT_TYPE::OUT_OUTPUT;
+	}
+	strhigh = sm.suffix().str();
+	regex_search(strhigh, sm, regex_number);
+	high = atoi(sm[0].str().c_str());
+}
+
+int Bot::GetId() {
+	return id;
+}
+
+int Bot::GetHighTarget() {
+	return high;
+}
+
+int Bot::GetLowTarget() {
+	return low;
+}
+
+int Bot::GetHighValue() {
+	return (val[0] > val[1] ? val[0] : val[1]);
+}
+
+int Bot::GetLowValue() {
+	return (val[0] < val[1] ? val[0] : val[1]);
+}
+
+bool Bot::IsReady() {
+	return val_cnt == 2;
+}
+
+void Bot::SetValue(int value) {
+	if (!IsReady()) {
+		val[val_cnt] = value;
+		val_cnt++;
 	}
 }
+
+OUT_TYPE Bot::GetLowTargetType() {
+	return low_type;
+}
+
+OUT_TYPE Bot::GetHighTargetType() {
+	return high_type;
+}
+
+bool Bot::HandlesValues(int val1, int val2) {
+	return ((val1 == val[0]) && (val2 == val[1])) || ((val1 == val[1]) && (val2 == val[0]));
+}
+//---------------------
 
 bool CheckBotInstruction(std::string instruction) {
 	std::regex bot_template("bot \\d+ gives low to (bot|output) \\d+ and high to (bot|output) \\d+");
@@ -82,6 +160,7 @@ int main(void) {
 	std::string line;
 	int result1, result2, cnt, val1, val2, bot_number;
 	std::map<int, std::vector<int>> values;
+	std::map<int, Bot> bots;
 
 	std::cout << "=== Advent of Code 2016 - day 10 ====" << std::endl;
 	std::cout << "--- part 1 ---" << std::endl;
@@ -118,7 +197,9 @@ int main(void) {
 				break;
 			case 'b':
 				if (CheckBotInstruction(line)) {
+					Bot bot(line);
 
+					bots[bot.GetId()] = bot;
 				} else {
 					return -1;
 				}
@@ -131,6 +212,25 @@ int main(void) {
 
 	if (input.is_open()) {
 		input.close();
+	}
+
+	for (auto const &ent1 : values) {
+		if (bots.find(ent1.first) != bots.end()) {
+			Bot bot = bots[ent1.first];
+
+			for (int i = 0; i < ent1.second.size(); i++) {
+				if (!bots[ent1.first].IsReady()) {
+					bots[ent1.first].SetValue(ent1.second[i]);
+				} else {
+					int x = 77;
+				}
+			}
+			//			if (bots[ent1.first].IsReady() && bots[ent1.first].HandlesValues(part1_val1, part1_val2)){
+			//				result1 = bots[ent1.first].GetId();
+			//			}
+		} else {
+			int x = 77;
+		}
 	}
 
 	std::cout << "Result is " << result1 << std::endl;
