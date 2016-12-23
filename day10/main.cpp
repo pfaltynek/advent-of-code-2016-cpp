@@ -165,8 +165,8 @@ int main(void) {
 	std::cout << "=== Advent of Code 2016 - day 10 ====" << std::endl;
 	std::cout << "--- part 1 ---" << std::endl;
 
-	input.open("input.txt", std::ifstream::in);
-	//input.open("input-test.txt", std::ifstream::in);
+	//input.open("input.txt", std::ifstream::in);
+	input.open("input-test.txt", std::ifstream::in);
 
 	if (input.fail()) {
 		std::cout << "Error opening input file.\n";
@@ -216,8 +216,6 @@ int main(void) {
 
 	for (auto const &ent1 : values) {
 		if (bots.find(ent1.first) != bots.end()) {
-			Bot bot = bots[ent1.first];
-
 			for (int i = 0; i < ent1.second.size(); i++) {
 				if (!bots[ent1.first].IsReady()) {
 					bots[ent1.first].SetValue(ent1.second[i]);
@@ -230,6 +228,59 @@ int main(void) {
 			//			}
 		} else {
 			int x = 77;
+		}
+	}
+
+	bool finished = false;
+	bool stuck = false;
+
+	while (!finished || !stuck) {
+		int bot_ready, id, val_id;
+		stuck = true;
+		for (auto &b : bots) {
+			id = b.first;
+			if (b.second.IsReady()) {
+				bot_ready = id;
+				stuck = false;
+
+				if (b.second.HandlesValues(part1_val1, part1_val2)) {
+					finished = true;
+					result1 = b.second.GetId();
+					break;
+				}
+
+				if (bots[id].GetLowTargetType() == OUT_TYPE::OUT_BOT) {
+					val_id = bots[id].GetLowTarget();
+					if (bots.find(val_id) != bots.end()) {
+						if (!bots[val_id].IsReady()) {
+							bots[val_id].SetValue(bots[id].GetLowValue());
+						} else {
+							int r = 1;
+						}
+					} else {
+						int z = 99;
+					}
+				}
+
+				if (bots[id].GetHighTargetType() == OUT_TYPE::OUT_BOT) {
+					val_id = bots[id].GetHighTarget();
+					if (bots.find(val_id) != bots.end()) {
+						if (!bots[val_id].IsReady()) {
+							bots[val_id].SetValue(bots[id].GetHighValue());
+						} else {
+							int r = 1;
+						}
+					} else {
+						int z = 99;
+					}
+				}
+
+				break;
+			}
+
+			if (!stuck){
+				bots.erase(bot_ready);
+			}
 		}
 	}
 
