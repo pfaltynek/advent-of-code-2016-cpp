@@ -6,10 +6,19 @@
 #include <string>
 #include <vector>
 
-std::regex regex_number("\\d+");
+//#define TEST 1
 
+#ifdef TEST
+const int part1_val1 = 5;
+const int part1_val2 = 2;
+const std::string input_filename = "input-test.txt";
+#else
 const int part1_val1 = 61;
 const int part1_val2 = 17;
+const std::string input_filename = "input.txt";
+#endif
+
+std::regex regex_number("\\d+");
 
 typedef enum { OUT_EMPTY,
 			   OUT_BOT,
@@ -161,12 +170,12 @@ int main(void) {
 	int result1, result2, cnt, val1, val2, bot_number;
 	std::map<int, std::vector<int>> values;
 	std::map<int, Bot> bots;
+	std::map<int, int> outputs;
 
 	std::cout << "=== Advent of Code 2016 - day 10 ====" << std::endl;
 	std::cout << "--- part 1 ---" << std::endl;
 
-	//input.open("input.txt", std::ifstream::in);
-	input.open("input-test.txt", std::ifstream::in);
+	input.open(input_filename, std::ifstream::in);
 
 	if (input.fail()) {
 		std::cout << "Error opening input file.\n";
@@ -176,6 +185,9 @@ int main(void) {
 	result1 = 0;
 	result2 = 0;
 	cnt = 0;
+	values.clear();
+	bots.clear();
+	outputs.clear();
 
 	while (std::getline(input, line)) {
 		cnt++;
@@ -233,12 +245,14 @@ int main(void) {
 
 	bool finished = false;
 	bool stuck = false;
+	bool outputs_updated = false, outputs_finished = false;
 
-	while (!finished || !stuck) {
+	while (!(finished && outputs_finished) && !stuck) {
 		int bot_ready, id, val_id;
 		stuck = true;
 		for (auto &b : bots) {
 			id = b.first;
+			outputs_updated = false;
 			if (b.second.IsReady()) {
 				bot_ready = id;
 				stuck = false;
@@ -246,7 +260,7 @@ int main(void) {
 				if (b.second.HandlesValues(part1_val1, part1_val2)) {
 					finished = true;
 					result1 = b.second.GetId();
-					break;
+					//break;
 				}
 
 				if (bots[id].GetLowTargetType() == OUT_TYPE::OUT_BOT) {
@@ -254,12 +268,11 @@ int main(void) {
 					if (bots.find(val_id) != bots.end()) {
 						if (!bots[val_id].IsReady()) {
 							bots[val_id].SetValue(bots[id].GetLowValue());
-						} else {
-							int r = 1;
 						}
-					} else {
-						int z = 99;
 					}
+				} else if (bots[id].GetLowTargetType() == OUT_TYPE::OUT_OUTPUT) {
+					outputs[bots[id].GetLowTarget()] = bots[id].GetLowValue();
+					outputs_updated = true;
 				}
 
 				if (bots[id].GetHighTargetType() == OUT_TYPE::OUT_BOT) {
@@ -267,19 +280,27 @@ int main(void) {
 					if (bots.find(val_id) != bots.end()) {
 						if (!bots[val_id].IsReady()) {
 							bots[val_id].SetValue(bots[id].GetHighValue());
-						} else {
-							int r = 1;
 						}
-					} else {
-						int z = 99;
 					}
+				} else if (bots[id].GetHighTargetType() == OUT_TYPE::OUT_OUTPUT) {
+					outputs[bots[id].GetHighTarget()] = bots[id].GetHighValue();
+					outputs_updated = true;
 				}
-
-				break;
 			}
 
-			if (!stuck){
+			if (outputs_updated && !outputs_finished) {
+				if (outputs.find(0) != outputs.end()) {
+					if (outputs.find(1) != outputs.end()) {
+						if (outputs.find(2) != outputs.end()) {
+							result2 = outputs[0] * outputs[1] * outputs[2];
+							outputs_finished = true;
+						}
+					}
+				}
+			}
+			if (!stuck) {
 				bots.erase(bot_ready);
+				break;
 			}
 		}
 	}
