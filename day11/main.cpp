@@ -9,8 +9,8 @@
 #include <vector>
 
 #define TEST 1
-#define FIRST_FLOOR 1
-#define FINAL_FLOOR 4
+#define FIRST_FLOOR 0
+#define FINAL_FLOOR 3
 
 #define GENERATOR 0
 #define MICROCHIP 1
@@ -19,7 +19,7 @@
 const int MAX_RTG_TYPES = 2;
 const std::string names[MAX_RTG_TYPES] = {"Hydr", "Lith"};
 const std::string empty_name = "....";
-const int init_map[MAX_RTG_TYPES][2] = {{2, 1}, {3, 1}};
+const int init_map[MAX_RTG_TYPES][2] = {{FIRST_FLOOR + 1, FIRST_FLOOR}, {FIRST_FLOOR + 2, FIRST_FLOOR}};
 #else
 #endif
 
@@ -70,6 +70,36 @@ void DescribeState(const HOUSE_MAP current_map) {
 		std::cout << std::endl;
 	}
 	std::cout << std::endl;
+}
+
+unsigned int PackState(HOUSE_MAP state) {
+	unsigned int result = 0;
+	unsigned char packed[MAX_RTG_TYPES];
+
+	// pack state
+	for (int i = 0; i < MAX_RTG_TYPES; i++) {
+		packed[i] = (state.map[i].Gen & 0x0F);
+		packed[i] = packed[i] << 4;
+		packed[i] |= (state.map[i].Chip & 0x0F);
+	}
+
+	// order packed items
+	for (int i = 0; i < (MAX_RTG_TYPES - 1); i++) {
+		if (packed[i] > packed[i+1]) {
+			unsigned char tmp = packed[i];
+			packed[i] = packed[i + 1];
+			packed[i + 1] = tmp;
+		}
+	}
+
+	// pack all into one value
+	result = state.elevator;
+	for (int i = 0; i < MAX_RTG_TYPES; i++) {
+		result = result << 8;
+		result |= packed[i];
+	}
+
+	return result;
 }
 
 bool IsStateValid(const HOUSE_MAP current_map) {
