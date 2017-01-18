@@ -8,7 +8,7 @@
 //#include <string>
 #include <vector>
 
-#define TEST 1
+//#define TEST 1
 #define FIRST_FLOOR 0
 #define FINAL_FLOOR 3
 
@@ -17,10 +17,14 @@
 
 #ifdef TEST
 const int MAX_RTG_TYPES = 2;
-const std::string names[MAX_RTG_TYPES] = {"Hydr", "Lith"};
-const std::string empty_name = "....";
+const std::string names[MAX_RTG_TYPES] = {"Hy", "Li"};
+const std::string empty_name = "..";
 const int init_map[MAX_RTG_TYPES][2] = {{FIRST_FLOOR + 1, FIRST_FLOOR}, {FIRST_FLOOR + 2, FIRST_FLOOR}};
 #else
+const int MAX_RTG_TYPES = 5;
+const std::string names[MAX_RTG_TYPES] = {"Pr", "Co", "Cu", "Ru", "Pl"};
+const std::string empty_name = "..";
+const int init_map[MAX_RTG_TYPES][2] = {{FIRST_FLOOR, FIRST_FLOOR}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}};
 #endif
 
 typedef struct {
@@ -33,11 +37,17 @@ typedef struct {
 	int elevator;
 } HOUSE_MAP;
 
-const std::string type_names[] = {"Genr", "Chip"};
-const std::string empty_type_name = "....";
+const std::string type_names[] = {"G", "M"};
+const std::string empty_type_name = ".";
 
 #define HYDROGEN 0
 #define LITHIUM 1
+
+#define PROMETHIUM 0
+#define COBALT 1
+#define CURIUM 2
+#define RUTHENIUM 3
+#define PLUTONIUM 4
 
 int result1, result2;
 
@@ -78,14 +88,14 @@ unsigned int PackState(HOUSE_MAP state) {
 
 	// pack state
 	for (int i = 0; i < MAX_RTG_TYPES; i++) {
-		packed[i] = (state.map[i].Gen & 0x0F);
-		packed[i] = packed[i] << 4;
-		packed[i] |= (state.map[i].Chip & 0x0F);
+		packed[i] = (state.map[i].Gen & 0x03);
+		packed[i] = packed[i] << 2;
+		packed[i] |= (state.map[i].Chip & 0x03);
 	}
-
+	
 	// order packed items
 	for (int i = 0; i < (MAX_RTG_TYPES - 1); i++) {
-		if (packed[i] > packed[i+1]) {
+		if (packed[i] > packed[i + 1]) {
 			unsigned char tmp = packed[i];
 			packed[i] = packed[i + 1];
 			packed[i + 1] = tmp;
@@ -95,7 +105,7 @@ unsigned int PackState(HOUSE_MAP state) {
 	// pack all into one value
 	result = state.elevator;
 	for (int i = 0; i < MAX_RTG_TYPES; i++) {
-		result = result << 8;
+		result = result << 4;
 		result |= packed[i];
 	}
 
@@ -140,7 +150,7 @@ void MapCopy(const HOUSE_MAP current_map, HOUSE_MAP &next_map) {
 	next_map.elevator = current_map.elevator;
 }
 
-void DoMove(const HOUSE_MAP current_map, int curr_steps, int &steps_limit, std::vector<HOUSE_MAP> history) {
+void DoMove(const HOUSE_MAP current_map, int curr_steps, int &steps_limit, std::vector<HOUSE_MAP> history, std::vector<unsigned int> optim) {
 	HOUSE_MAP next_map;
 	int curr_floor_map[MAX_RTG_TYPES * 2][2];
 	int curr_floor_map_size;
@@ -187,8 +197,14 @@ void DoMove(const HOUSE_MAP current_map, int curr_steps, int &steps_limit, std::
 				next_map.map[curr_floor_map[i][0]].Chip = next_elevator;
 			}
 			if (IsStateValid(next_map)) {
-				std::vector<HOUSE_MAP> new_hist(history);
-				DoMove(next_map, curr_steps, steps_limit, new_hist);
+				unsigned int packed = PackState(next_map);
+				if (std::find(optim.begin(), optim.end(), packed) == optim.end()) {
+					std::vector<unsigned int> new_optim(optim);
+					std::vector<HOUSE_MAP> new_hist(history);
+
+					optim.push_back(packed);
+					DoMove(next_map, curr_steps, steps_limit, new_hist, new_optim);
+				}
 			}
 
 			for (int j = i + 1; j < curr_floor_map_size; j++) {
@@ -205,8 +221,14 @@ void DoMove(const HOUSE_MAP current_map, int curr_steps, int &steps_limit, std::
 					next_map.map[curr_floor_map[j][0]].Chip = next_elevator;
 				}
 				if (IsStateValid(next_map)) {
-					std::vector<HOUSE_MAP> new_hist(history);
-					DoMove(next_map, curr_steps, steps_limit, new_hist);
+					unsigned int packed = PackState(next_map);
+					if (std::find(optim.begin(), optim.end(), packed) == optim.end()) {
+						std::vector<unsigned int> new_optim(optim);
+						std::vector<HOUSE_MAP> new_hist(history);
+
+						optim.push_back(packed);
+						DoMove(next_map, curr_steps, steps_limit, new_hist, new_optim);
+					}
 				}
 			}
 		}
@@ -221,8 +243,14 @@ void DoMove(const HOUSE_MAP current_map, int curr_steps, int &steps_limit, std::
 				next_map.map[curr_floor_map[i][0]].Chip = next_elevator;
 			}
 			if (IsStateValid(next_map)) {
-				std::vector<HOUSE_MAP> new_hist(history);
-				DoMove(next_map, curr_steps, steps_limit, new_hist);
+				unsigned int packed = PackState(next_map);
+				if (std::find(optim.begin(), optim.end(), packed) == optim.end()) {
+					std::vector<unsigned int> new_optim(optim);
+					std::vector<HOUSE_MAP> new_hist(history);
+
+					optim.push_back(packed);
+					DoMove(next_map, curr_steps, steps_limit, new_hist, new_optim);
+				}
 			}
 
 			for (int j = i + 1; j < curr_floor_map_size; j++) {
@@ -239,8 +267,14 @@ void DoMove(const HOUSE_MAP current_map, int curr_steps, int &steps_limit, std::
 					next_map.map[curr_floor_map[j][0]].Chip = next_elevator;
 				}
 				if (IsStateValid(next_map)) {
-					std::vector<HOUSE_MAP> new_hist(history);
-					DoMove(next_map, curr_steps, steps_limit, new_hist);
+					unsigned int packed = PackState(next_map);
+					if (std::find(optim.begin(), optim.end(), packed) == optim.end()) {
+						std::vector<unsigned int> new_optim(optim);
+						std::vector<HOUSE_MAP> new_hist(history);
+
+						optim.push_back(packed);
+						DoMove(next_map, curr_steps, steps_limit, new_hist, new_optim);
+					}
 				}
 			}
 		}
@@ -251,6 +285,7 @@ int main(void) {
 	int cnt;
 	HOUSE_MAP current_map;
 	std::vector<HOUSE_MAP> history;
+	std::vector<unsigned int> optim;
 
 	std::cout << "=== Advent of Code 2016 - day 11 ====" << std::endl;
 	std::cout << "--- part 1 ---" << std::endl;
@@ -259,14 +294,18 @@ int main(void) {
 		current_map.map[j].Gen = init_map[j][GENERATOR];
 		current_map.map[j].Chip = init_map[j][MICROCHIP];
 	}
-	current_map.elevator = 1;
+	current_map.elevator = FIRST_FLOOR;
 
-	result1 = 12;
+	DescribeState(current_map);
+
+	result1 = 40;
 	result2 = 0;
 	cnt = 0;
 	history.clear();
+	optim.clear();
 
-	DoMove(current_map, 0, result1, history);
+	optim.push_back(PackState(current_map));
+	DoMove(current_map, 0, result1, history, optim);
 
 	//DescribeState(current_map, 1);
 
