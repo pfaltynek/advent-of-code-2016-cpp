@@ -1,2 +1,2 @@
-part1:	161
-part2:	133163
+part1:	33
+part2:	

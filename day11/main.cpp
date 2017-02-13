@@ -1,31 +1,27 @@
 
-
+#include <algorithm>
 #include <cstring>
 #include <iostream>
-//#include <fstream>
-//#include <map>
-//#include <regex>
-//#include <string>
 #include <vector>
 
-//#define TEST 1
+#include <queue>
+
 #define FIRST_FLOOR 0
 #define FINAL_FLOOR 3
 
 #define GENERATOR 0
 #define MICROCHIP 1
+const std::string type_names[] = {"G", "M"};
+const std::string empty_type_name = ".";
+const std::string empty_name = ".";
 
-#ifdef TEST
-const int MAX_RTG_TYPES = 2;
-const std::string names[MAX_RTG_TYPES] = {"Hy", "Li"};
-const std::string empty_name = "..";
-const int init_map[MAX_RTG_TYPES][2] = {{FIRST_FLOOR + 1, FIRST_FLOOR}, {FIRST_FLOOR + 2, FIRST_FLOOR}};
-#else
-const int MAX_RTG_TYPES = 5;
-const std::string names[MAX_RTG_TYPES] = {"Pr", "Co", "Cu", "Ru", "Pl"};
-const std::string empty_name = "..";
-const int init_map[MAX_RTG_TYPES][2] = {{FIRST_FLOOR, FIRST_FLOOR}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}};
-#endif
+#define MAX_RTG_TYPES 7
+#define MAX_RTG_TYPES_TEST 2
+#define MAX_RTG_TYPES_PART1 5
+#define MAX_RTG_TYPES_PART2 7
+const int init_map_test[MAX_RTG_TYPES_TEST][2] = {{FIRST_FLOOR + 1, FIRST_FLOOR}, {FIRST_FLOOR + 2, FIRST_FLOOR}};
+const int init_map_part1[MAX_RTG_TYPES_PART1][2] = {{FIRST_FLOOR, FIRST_FLOOR}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}};
+const int init_map_part2[MAX_RTG_TYPES_PART2][2] = {{FIRST_FLOOR, FIRST_FLOOR}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR + 1, FIRST_FLOOR + 2}, {FIRST_FLOOR, FIRST_FLOOR}, {FIRST_FLOOR, FIRST_FLOOR}};
 
 typedef struct {
 	int Gen;
@@ -35,21 +31,13 @@ typedef struct {
 typedef struct {
 	RTG_PAIR map[MAX_RTG_TYPES];
 	int elevator;
+	int step_no;
 } HOUSE_MAP;
 
-const std::string type_names[] = {"G", "M"};
-const std::string empty_type_name = ".";
-
-#define HYDROGEN 0
-#define LITHIUM 1
-
-#define PROMETHIUM 0
-#define COBALT 1
-#define CURIUM 2
-#define RUTHENIUM 3
-#define PLUTONIUM 4
-
 int result1, result2;
+int real_rtg_types_count = MAX_RTG_TYPES_TEST;
+
+#define TEST 1
 
 void DescribeState(const HOUSE_MAP current_map) {
 	std::cout << std::endl;
@@ -60,9 +48,9 @@ void DescribeState(const HOUSE_MAP current_map) {
 		} else {
 			std::cout << ". ";
 		}
-		for (int j = 0; j < MAX_RTG_TYPES; j++) {
+		for (int j = 0; j < real_rtg_types_count; j++) {
 			if (current_map.map[j].Gen == i) {
-				std::cout << names[j].c_str() << type_names[GENERATOR].c_str();
+				std::cout << (char)('A' + j) << type_names[GENERATOR].c_str();
 			} else {
 				std::cout << empty_name.c_str() << empty_type_name.c_str();
 			}
@@ -70,7 +58,7 @@ void DescribeState(const HOUSE_MAP current_map) {
 			std::cout << ' ';
 
 			if (current_map.map[j].Chip == i) {
-				std::cout << names[j].c_str() << type_names[MICROCHIP].c_str();
+				std::cout << (char)('A' + j) << type_names[MICROCHIP].c_str();
 			} else {
 				std::cout << empty_name.c_str() << empty_type_name.c_str();
 			}
@@ -82,19 +70,19 @@ void DescribeState(const HOUSE_MAP current_map) {
 	std::cout << std::endl;
 }
 
-unsigned int PackState(HOUSE_MAP state) {
-	unsigned int result = 0;
+unsigned long long PackState(HOUSE_MAP state) {
+	unsigned long long result = 0;
 	unsigned char packed[MAX_RTG_TYPES];
 
 	// pack state
-	for (int i = 0; i < MAX_RTG_TYPES; i++) {
-		packed[i] = (state.map[i].Gen & 0x03);
-		packed[i] = packed[i] << 2;
-		packed[i] |= (state.map[i].Chip & 0x03);
+	for (int i = 0; i < real_rtg_types_count; i++) {
+		packed[i] = (state.map[i].Gen & 0x0F);
+		packed[i] = packed[i] << 4;
+		packed[i] |= (state.map[i].Chip & 0x0F);
 	}
-	
+
 	// order packed items
-	for (int i = 0; i < (MAX_RTG_TYPES - 1); i++) {
+	for (int i = 0; i < (real_rtg_types_count - 1); i++) {
 		if (packed[i] > packed[i + 1]) {
 			unsigned char tmp = packed[i];
 			packed[i] = packed[i + 1];
@@ -104,8 +92,8 @@ unsigned int PackState(HOUSE_MAP state) {
 
 	// pack all into one value
 	result = state.elevator;
-	for (int i = 0; i < MAX_RTG_TYPES; i++) {
-		result = result << 4;
+	for (int i = 0; i < real_rtg_types_count; i++) {
+		result = result << 8;
 		result |= packed[i];
 	}
 
@@ -113,33 +101,24 @@ unsigned int PackState(HOUSE_MAP state) {
 }
 
 bool IsStateValid(const HOUSE_MAP current_map) {
-	bool single_gen, single_chip;
+	bool is_gen, is_unpaired_chip;
 
 	for (int i = FIRST_FLOOR; i <= FINAL_FLOOR; i++) {
-		single_gen = single_chip = false;
+		is_gen = is_unpaired_chip = false;
 
-		for (int j = 0; j < MAX_RTG_TYPES; j++) {
-			if ((current_map.map[j].Gen == i) && (current_map.map[j].Chip != i)) {
-				single_gen = true;
+		for (int j = 0; j < real_rtg_types_count; j++) {
+			if (current_map.map[j].Gen == i) {
+				is_gen = true;
 			}
-			if ((current_map.map[j].Gen != i) && (current_map.map[j].Chip == i)) {
-				single_chip = true;
+			if ((current_map.map[j].Chip == i) && (current_map.map[j].Gen != i)) {
+				is_unpaired_chip = true;
 			}
 		}
-		if (single_gen && single_chip) {
+		if (is_gen && is_unpaired_chip) {
 			return false;
 		}
 	}
 
-	return true;
-}
-
-bool IsFinished(const HOUSE_MAP current_map) {
-	for (int j = 0; j < MAX_RTG_TYPES; j++) {
-		if ((current_map.map[j].Gen != FINAL_FLOOR) || (current_map.map[j].Chip != FINAL_FLOOR)) {
-			return false;
-		}
-	}
 	return true;
 }
 
@@ -150,168 +129,155 @@ void MapCopy(const HOUSE_MAP current_map, HOUSE_MAP &next_map) {
 	next_map.elevator = current_map.elevator;
 }
 
-void DoMove(const HOUSE_MAP current_map, int curr_steps, int &steps_limit, std::vector<HOUSE_MAP> history, std::vector<unsigned int> optim) {
-	HOUSE_MAP next_map;
-	int curr_floor_map[MAX_RTG_TYPES * 2][2];
-	int curr_floor_map_size;
-	int next_elevator;
-
-	curr_steps++;
-	history.push_back(current_map);
-
-	if (curr_steps >= steps_limit) {
-		return;
-	}
-
-	if (IsFinished(current_map)) {
-		steps_limit = curr_steps;
-
-		for (int i = 0; i < history.size(); i++) {
-			DescribeState(history[i]);
-		}
-		return;
-	}
-
-	curr_floor_map_size = 0;
-	for (int j = 0; j < MAX_RTG_TYPES; j++) {
-		if (current_map.map[j].Gen == current_map.elevator) {
-			curr_floor_map[curr_floor_map_size][0] = j;
-			curr_floor_map[curr_floor_map_size][1] = GENERATOR;
-			curr_floor_map_size++;
-		}
-		if (current_map.map[j].Chip == current_map.elevator) {
-			curr_floor_map[curr_floor_map_size][0] = j;
-			curr_floor_map[curr_floor_map_size][1] = MICROCHIP;
-			curr_floor_map_size++;
-		}
-	}
-
-	for (int i = 0; i < curr_floor_map_size; i++) {
-		if (current_map.elevator > FIRST_FLOOR) {
-			next_elevator = current_map.elevator - 1;
-			MapCopy(current_map, next_map);
-			next_map.elevator = next_elevator;
-			if (curr_floor_map[i][1] == GENERATOR) {
-				next_map.map[curr_floor_map[i][0]].Gen = next_elevator;
-			} else {
-				next_map.map[curr_floor_map[i][0]].Chip = next_elevator;
-			}
-			if (IsStateValid(next_map)) {
-				unsigned int packed = PackState(next_map);
-				if (std::find(optim.begin(), optim.end(), packed) == optim.end()) {
-					std::vector<unsigned int> new_optim(optim);
-					std::vector<HOUSE_MAP> new_hist(history);
-
-					optim.push_back(packed);
-					DoMove(next_map, curr_steps, steps_limit, new_hist, new_optim);
-				}
-			}
-
-			for (int j = i + 1; j < curr_floor_map_size; j++) {
-				MapCopy(current_map, next_map);
-				next_map.elevator = next_elevator;
-				if (curr_floor_map[i][1] == GENERATOR) {
-					next_map.map[curr_floor_map[i][0]].Gen = next_elevator;
-				} else {
-					next_map.map[curr_floor_map[i][0]].Chip = next_elevator;
-				}
-				if (curr_floor_map[j][1] == GENERATOR) {
-					next_map.map[curr_floor_map[j][0]].Gen = next_elevator;
-				} else {
-					next_map.map[curr_floor_map[j][0]].Chip = next_elevator;
-				}
-				if (IsStateValid(next_map)) {
-					unsigned int packed = PackState(next_map);
-					if (std::find(optim.begin(), optim.end(), packed) == optim.end()) {
-						std::vector<unsigned int> new_optim(optim);
-						std::vector<HOUSE_MAP> new_hist(history);
-
-						optim.push_back(packed);
-						DoMove(next_map, curr_steps, steps_limit, new_hist, new_optim);
-					}
-				}
-			}
-		}
-
-		if (current_map.elevator < FINAL_FLOOR) {
-			next_elevator = current_map.elevator + 1;
-			MapCopy(current_map, next_map);
-			next_map.elevator = next_elevator;
-			if (curr_floor_map[i][1] == GENERATOR) {
-				next_map.map[curr_floor_map[i][0]].Gen = next_elevator;
-			} else {
-				next_map.map[curr_floor_map[i][0]].Chip = next_elevator;
-			}
-			if (IsStateValid(next_map)) {
-				unsigned int packed = PackState(next_map);
-				if (std::find(optim.begin(), optim.end(), packed) == optim.end()) {
-					std::vector<unsigned int> new_optim(optim);
-					std::vector<HOUSE_MAP> new_hist(history);
-
-					optim.push_back(packed);
-					DoMove(next_map, curr_steps, steps_limit, new_hist, new_optim);
-				}
-			}
-
-			for (int j = i + 1; j < curr_floor_map_size; j++) {
-				MapCopy(current_map, next_map);
-				next_map.elevator = next_elevator;
-				if (curr_floor_map[i][1] == GENERATOR) {
-					next_map.map[curr_floor_map[i][0]].Gen = next_elevator;
-				} else {
-					next_map.map[curr_floor_map[i][0]].Chip = next_elevator;
-				}
-				if (curr_floor_map[j][1] == GENERATOR) {
-					next_map.map[curr_floor_map[j][0]].Gen = next_elevator;
-				} else {
-					next_map.map[curr_floor_map[j][0]].Chip = next_elevator;
-				}
-				if (IsStateValid(next_map)) {
-					unsigned int packed = PackState(next_map);
-					if (std::find(optim.begin(), optim.end(), packed) == optim.end()) {
-						std::vector<unsigned int> new_optim(optim);
-						std::vector<HOUSE_MAP> new_hist(history);
-
-						optim.push_back(packed);
-						DoMove(next_map, curr_steps, steps_limit, new_hist, new_optim);
-					}
-				}
-			}
-		}
+void MoveItem(HOUSE_MAP &next_map, int rtg_item_type, int item_type, int new_floor) {
+	if (item_type == GENERATOR) {
+		next_map.map[rtg_item_type].Gen = new_floor;
+	} else {
+		next_map.map[rtg_item_type].Chip = new_floor;
 	}
 }
 
+bool IsInHistory(unsigned long long stamp, std::vector<unsigned long long> history) {
+	//return (std::find(history.begin(), history.end(), stamp) != history.end());
+	if (std::find(history.begin(), history.end(), stamp) != history.end()) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+int Explore2(HOUSE_MAP init_map) {
+	std::vector<unsigned long long> history;
+	HOUSE_MAP current_map, next, next2;
+	unsigned long long stamp, target;
+	int curr_floor_map[MAX_RTG_TYPES * 2][2];
+	int curr_floor_map_size;
+	std::queue<HOUSE_MAP> queue;
+
+	current_map.elevator = FINAL_FLOOR;
+	for (int j = 0; j < real_rtg_types_count; j++) {
+		current_map.map[j].Gen = FINAL_FLOOR;
+		current_map.map[j].Chip = FINAL_FLOOR;
+	}
+	target = PackState(current_map);
+
+	history.clear();
+	//queue.clear();
+	queue.push(init_map);
+
+	while (queue.size() > 0) {
+		current_map = queue.front();
+		queue.pop();
+		stamp = PackState(current_map);
+
+		if (stamp == target) {
+			return current_map.step_no;
+		}
+
+		if (IsInHistory(stamp, history)) {
+			continue;
+		} else {
+			history.push_back(stamp);
+		}
+
+		current_map.step_no++;
+
+		curr_floor_map_size = 0;
+		for (int j = 0; j < real_rtg_types_count; j++) {
+			if (current_map.map[j].Gen == current_map.elevator) {
+				curr_floor_map[curr_floor_map_size][0] = j;
+				curr_floor_map[curr_floor_map_size][1] = GENERATOR;
+				curr_floor_map_size++;
+			}
+			if (current_map.map[j].Chip == current_map.elevator) {
+				curr_floor_map[curr_floor_map_size][0] = j;
+				curr_floor_map[curr_floor_map_size][1] = MICROCHIP;
+				curr_floor_map_size++;
+			}
+		}
+
+		for (int i = 0; i < curr_floor_map_size; i++) {
+			if (current_map.elevator > FIRST_FLOOR) {
+				next = current_map;
+				next.elevator--;
+				MoveItem(next, curr_floor_map[i][0], curr_floor_map[i][1], next.elevator);
+				if (IsStateValid(next)) {
+					queue.push(next);
+				}
+				for (int j = i + 1; j < curr_floor_map_size; j++) {
+					next2 = next;
+					MoveItem(next2, curr_floor_map[j][0], curr_floor_map[j][1], next2.elevator);
+					if (IsStateValid(next2)) {
+						queue.push(next2);
+					}
+				}
+			}
+			if (current_map.elevator < FINAL_FLOOR) {
+				next = current_map;
+				next.elevator++;
+				MoveItem(next, curr_floor_map[i][0], curr_floor_map[i][1], next.elevator);
+				if (IsStateValid(next)) {
+					queue.push(next);
+				}
+				for (int j = i + 1; j < curr_floor_map_size; j++) {
+					next2 = next;
+					MoveItem(next2, curr_floor_map[j][0], curr_floor_map[j][1], next2.elevator);
+					if (IsStateValid(next2)) {
+						queue.push(next2);
+					}
+				}
+			}
+		}
+	}
+
+	return -1;
+}
+
 int main(void) {
-	int cnt;
 	HOUSE_MAP current_map;
-	std::vector<HOUSE_MAP> history;
-	std::vector<unsigned int> optim;
+	std::vector<unsigned long long> optim;
 
 	std::cout << "=== Advent of Code 2016 - day 11 ====" << std::endl;
-	std::cout << "--- part 1 ---" << std::endl;
 
-	for (int j = 0; j < MAX_RTG_TYPES; j++) {
-		current_map.map[j].Gen = init_map[j][GENERATOR];
-		current_map.map[j].Chip = init_map[j][MICROCHIP];
+#if TEST
+	std::cout << "--- test ---" << std::endl;
+
+	real_rtg_types_count = MAX_RTG_TYPES_TEST; //MAX_RTG_TYPES_PART1;
+	for (int j = 0; j < real_rtg_types_count; j++) {
+		current_map.map[j].Gen = init_map_test[j][GENERATOR];
+		current_map.map[j].Chip = init_map_test[j][MICROCHIP];
 	}
 	current_map.elevator = FIRST_FLOOR;
-
-	DescribeState(current_map);
-
-	result1 = 40;
-	result2 = 0;
-	cnt = 0;
-	history.clear();
+	current_map.step_no = 0;
 	optim.clear();
+	//DescribeState(current_map);
 
-	optim.push_back(PackState(current_map));
-	DoMove(current_map, 0, result1, history, optim);
+	result1 = Explore2(current_map);
+#endif
 
-	//DescribeState(current_map, 1);
+	std::cout << "--- part 1 ---" << std::endl;
 
-	//bool res = IsStateValid(current_map);
+	real_rtg_types_count = MAX_RTG_TYPES_PART1;
+	for (int j = 0; j < real_rtg_types_count; j++) {
+		current_map.map[j].Gen = init_map_part1[j][GENERATOR];
+		current_map.map[j].Chip = init_map_part1[j][MICROCHIP];
+	}
+	current_map.elevator = FIRST_FLOOR;
+	current_map.step_no = 0;
+	optim.clear();
+	//DescribeState(current_map);
+	result1 = Explore2(current_map);
 
-	//res = IsFinished(current_map);
+	real_rtg_types_count = MAX_RTG_TYPES_PART2;
+	for (int j = 0; j < real_rtg_types_count; j++) {
+		current_map.map[j].Gen = init_map_part2[j][GENERATOR];
+		current_map.map[j].Chip = init_map_part2[j][MICROCHIP];
+	}
+	current_map.elevator = FIRST_FLOOR;
+	current_map.step_no = 0;
+	optim.clear();
+	//DescribeState(current_map);
+	//result2 = Explore2(current_map);
 
 	std::cout << "Result is " << result1 << std::endl;
 	std::cout << "--- part 2 ---" << std::endl;
