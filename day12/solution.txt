@@ -1,2 +1,2 @@
-part1:	33 (cca 46secs)
-part2:	57 (cca 50.6 min)
+part1:	318117
+part2:	9227771
