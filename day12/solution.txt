@@ -1,0 +1,2 @@
+part1:	33 (cca 46secs)
+part2:	57 (cca 50.6 min)
