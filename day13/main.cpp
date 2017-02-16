@@ -143,7 +143,7 @@ unsigned int DoIt_part2(unsigned int x1, unsigned int y1, unsigned int steps_max
 
 int main(void) {
 	long time = 0, t1 = 0, t2 = 0;
-	std::cout << "=== Advent of Code 2016 - day 11 ====" << std::endl;
+	std::cout << "=== Advent of Code 2016 - day 13 ====" << std::endl;
 
 #if TEST
 	std::cout << "--- test ---" << std::endl;
