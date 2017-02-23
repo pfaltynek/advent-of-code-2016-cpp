@@ -2,27 +2,35 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <vector>
 
-#define TEST1 1
+#include <list>
+
+//#define TEST1 1
 
 int SolvePart1(int count) {
-	std::vector<int> circle(count,0);
-	int x = 0;
+	std::list<int> circle;
+	std::list<int>::iterator pos1, pos2;
 
 	for (int i = 0; i < count; i++) {
-		circle[i] = i + 1;
+		circle.emplace_back(i + 1);
 	}
-	
+
+	pos1 = circle.begin();
+
 	while (circle.size() > 1) {
-		x++;
-		if (x >= circle.size()) {
-			x = 0;
+		if (pos1 == circle.end()) {
+			pos1 = circle.begin();
 		}
-		circle.erase(circle.begin() + x);
+		pos2 = pos1;
+		pos2++;
+		if (pos2 == circle.end()) {
+			pos2 = circle.begin();
+		}
+		circle.erase(pos2);
+		pos1++;
 	}
-	
-	return circle[0];
+
+	return circle.front();
 }
 
 int main(void) {
@@ -41,5 +49,5 @@ int main(void) {
 	std::cout << "Result is " << result1 << std::endl;
 	std::cout << "--- part 2 ---" << std::endl;
 	result2 = 0;
-	std::cout << "Result is:" << result2 << std::endl;
+	std::cout << "Result is " << result2 << std::endl;
 }
