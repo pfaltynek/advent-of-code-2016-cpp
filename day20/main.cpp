@@ -32,9 +32,12 @@ void OptimizeRanges(std::vector<IP_RANGE> &ranges) {
 
 	it1 = ranges.begin();
 	it2 = it1 + 1;
-
+	//4258853578
 	while (it2 != ranges.end()) {
-		if ((it1->last + 1) >= it2->first) {
+		if ((it1->first == 4258853578) || (it2->first == 4258853578)) {
+			bool fnd = true;
+		}
+		if ((it1->last) >= (it2->first - 1)) {
 			it1->last = (it1->last > it2->last) ? it1->last : it2->last;
 			ranges.erase(it2);
 			it2 = it1 + 1;
@@ -46,30 +49,26 @@ void OptimizeRanges(std::vector<IP_RANGE> &ranges) {
 }
 
 uint32_t GetWhiteIPCount(std::vector<IP_RANGE> ranges) {
-	IT it, it_last;
-	uint32_t next_check = 0, result = 0;
+	IT it;
+	uint32_t result = 0;
+	long long next_check = 0;
 
 	if (ranges.empty()) {
 		return UINT32_MAX;
 	}
 
 	it = ranges.begin();
-	it_last = ranges.begin();
 
-	while (it != ranges.end()) {
-		if (it->last == UINT32_MAX) {
-			it_last = it;
-			break;
-		}
+	while ((it != ranges.end()) || (next_check > UINT32_MAX)) {
 		if (it->first > next_check) {
 			result += it->first - next_check;
 		}
 		next_check = it->last + 1;
-		it_last = it;
 		it++;
 	}
-
-	result += UINT32_MAX - it_last->last;
+	if (next_check < UINT32_MAX) {
+		result += UINT32_MAX - next_check + 1;
+	}
 
 	return result;
 }
