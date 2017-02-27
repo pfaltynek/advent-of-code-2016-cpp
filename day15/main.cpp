@@ -92,5 +92,5 @@ int main(void) {
 	x.position = (data.size() + 1 + 0) % x.size;
 	data.push_back(x);
 	result2 = CalculateChineRemainers(data);
-	std::cout << "Result is:" << result2 << std::endl;
+	std::cout << "Result is " << result2 << std::endl;
 }

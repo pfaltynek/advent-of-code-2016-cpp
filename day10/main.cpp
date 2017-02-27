@@ -307,5 +307,5 @@ int main(void) {
 
 	std::cout << "Result is " << result1 << std::endl;
 	std::cout << "--- part 2 ---" << std::endl;
-	std::cout << "Result is:" << result2 << std::endl;
+	std::cout << "Result is " << result2 << std::endl;
 }

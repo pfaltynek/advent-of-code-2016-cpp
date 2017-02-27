@@ -67,5 +67,5 @@ int main(void) {
 	std::cout << "Result is " << result1 << std::endl;
 	std::cout << "--- part 2 ---" << std::endl;
 	result2 = GetDragonChecksum(data, disk2size);
-	std::cout << "Result is:" << result2 << std::endl;
+	std::cout << "Result is " << result2 << std::endl;
 }
