@@ -110,10 +110,6 @@ void LogInstruction(DAY21_INST inst) {
 	std::cout << std::endl;
 }
 
-void UnScramblePassword(std::string &password, std::vector<DAY21_INST> insts) {
-
-}
-
 void ScramblePassword(std::string &password, std::vector<DAY21_INST> insts) {
 	std::vector<DAY21_INST>::iterator it;
 	std::string test = password;
@@ -216,6 +212,33 @@ void ScramblePassword(std::string &password, std::vector<DAY21_INST> insts) {
 	}
 }
 
+void FillPasswordsForBF(std::string password, std::string item, std::vector<std::string> list) {
+	if (password.empty()) {
+		list.push_back(item);
+		return;
+	}
+
+	for (int i = 0; i < password.size(); i++) {
+		FillPasswordsForBF();
+	}
+}
+
+void UnScramblePasswordBF(std::string &password, std::vector<DAY21_INST> insts) {
+	std::vector<std::string> bf_source;
+	std::string result;
+
+	bf_source.clear();
+	FillPasswordsForBF(password, "", bf_source);
+	for (int = 0; i < bf_source.size(); i++) {
+		result = bf_source[i];
+		ScramblePassword(result, insts);
+		if (result == password) {
+			password = bf_source[i];
+			break;
+		}
+	}
+}
+
 int main(void) {
 	std::ifstream input;
 	std::string line, result1, result2;
@@ -276,8 +299,7 @@ int main(void) {
 	std::cout << "Result is " << result1 << std::endl;
 	std::cout << "--- part 2 ---" << std::endl;
 	result2 = "fbgdceah";
-	UnScramblePassword(result2, data);
+	UnScramblePasswordBF(result2, data);
 	std::cout << "Result is " << result2 << std::endl;
 #endif
 }
-
