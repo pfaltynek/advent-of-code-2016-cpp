@@ -26,6 +26,23 @@ bool DecodeNodeInfo(std::string line, DAY22_NODE &node) {
 	return false;
 }
 
+bool CompareNodesByUsed(DAY22_NODE node1, DAY22_NODE node2) {
+	return (node1.used > node2.used);
+}
+
+bool CompareNodesByAvail(DAY22_NODE node1, DAY22_NODE node2) {
+	return (node1.avail > node2.avail);
+}
+
+int GetViableNodesPairCount(std::vector<DAY22_NODE> nodes) {
+	std::vector<DAY22_NODE> by_used(nodes), by_avail(nodes);
+
+	std::sort(by_used.begin(), by_used.end(), CompareNodesByUsed);
+	std::sort(by_avail.begin(), by_avail.end(), CompareNodesByAvail);
+
+	return 0;
+}
+
 int main(void) {
 	std::ifstream input;
 	std::string line;
@@ -62,7 +79,7 @@ int main(void) {
 	}
 
 	std::cout << "--- part 1 ---" << std::endl;
-
+	result1 = GetViableNodesPairCount(data);
 	std::cout << "Result is " << result1 << std::endl;
 	std::cout << "--- part 2 ---" << std::endl;
 
