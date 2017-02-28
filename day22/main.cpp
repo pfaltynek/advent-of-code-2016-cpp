@@ -14,7 +14,6 @@ bool DecodeNodeInfo(std::string line, DAY22_NODE &node) {
 	std::smatch sm;
 
 	if (std::regex_match(line, sm, node_info_regex)) {
-		//if (std::regex_search(line, sm, node_info_regex)) {
 		node.x = atoi(sm.str(1).c_str());
 		node.y = atoi(sm.str(2).c_str());
 		node.size = atoi(sm.str(3).c_str());
@@ -26,19 +25,27 @@ bool DecodeNodeInfo(std::string line, DAY22_NODE &node) {
 	return false;
 }
 
-bool CompareNodesByUsed(DAY22_NODE node1, DAY22_NODE node2) {
+bool CompareNodesByUsedAsc(DAY22_NODE node1, DAY22_NODE node2) {
+	return (node1.used < node2.used);
+}
+
+bool CompareNodesByAvailAsc(DAY22_NODE node1, DAY22_NODE node2) {
+	return (node1.avail < node2.avail);
+}
+
+bool CompareNodesByUsedDesc(DAY22_NODE node1, DAY22_NODE node2) {
 	return (node1.used > node2.used);
 }
 
-bool CompareNodesByAvail(DAY22_NODE node1, DAY22_NODE node2) {
+bool CompareNodesByAvailDesc(DAY22_NODE node1, DAY22_NODE node2) {
 	return (node1.avail > node2.avail);
 }
 
 int GetViableNodesPairCount(std::vector<DAY22_NODE> nodes) {
 	std::vector<DAY22_NODE> by_used(nodes), by_avail(nodes);
 
-	std::sort(by_used.begin(), by_used.end(), CompareNodesByUsed);
-	std::sort(by_avail.begin(), by_avail.end(), CompareNodesByAvail);
+	std::sort(by_used.begin(), by_used.end(), CompareNodesByUsedDesc);
+	std::sort(by_avail.begin(), by_avail.end(), CompareNodesByAvailDesc);
 
 	return 0;
 }
