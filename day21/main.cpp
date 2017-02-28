@@ -212,14 +212,18 @@ void ScramblePassword(std::string &password, std::vector<DAY21_INST> insts) {
 	}
 }
 
-void FillPasswordsForBF(std::string password, std::string item, std::vector<std::string> list) {
+void FillPasswordsForBF(std::string password, std::string item, std::vector<std::string> &list) {
+	std::string::iterator it;
+
 	if (password.empty()) {
 		list.push_back(item);
 		return;
 	}
 
 	for (int i = 0; i < password.size(); i++) {
-		FillPasswordsForBF();
+		std::string new_pwd = password;
+		new_pwd.erase(i, 1);
+		FillPasswordsForBF(new_pwd, item + password[i], list);
 	}
 }
 
@@ -229,7 +233,7 @@ void UnScramblePasswordBF(std::string &password, std::vector<DAY21_INST> insts) 
 
 	bf_source.clear();
 	FillPasswordsForBF(password, "", bf_source);
-	for (int = 0; i < bf_source.size(); i++) {
+	for (int i = 0; i < bf_source.size(); i++) {
 		result = bf_source[i];
 		ScramblePassword(result, insts);
 		if (result == password) {
