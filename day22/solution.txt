@@ -1,2 +1,2 @@
-part1:	gcedfahb
-part2:	hegbdcfa
+part1:	955
+part2:	246
