@@ -14,7 +14,6 @@ bool DecodeNodeInfo(std::string line, DAY22_NODE &node) {
 	std::smatch sm;
 
 	if (std::regex_match(line, sm, node_info_regex)) {
-		//if (std::regex_search(line, sm, node_info_regex)) {
 		node.x = atoi(sm.str(1).c_str());
 		node.y = atoi(sm.str(2).c_str());
 		node.size = atoi(sm.str(3).c_str());
@@ -75,7 +74,6 @@ void PrintMap(std::vector<DAY22_NODE> nodes, int x, int y, int max_avail) {
 }
 
 int GetMovementSteps(std::vector<DAY22_NODE> nodes, int width, int height, int max_avail_x, int max_avail_y, int targ_x, int targ_y, int goal_x, int goal_y) {
-
 	return 0;
 }
 
