@@ -1,9 +1,9 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <regex>
 #include <string>
-#include <vector>
 
 typedef struct {
 	int x, y, size, used, avail, use_perc;
@@ -44,7 +44,7 @@ int GetViableNodesPairCountBF(std::vector<DAY22_NODE> nodes) {
 }
 
 void PrintMap(std::vector<DAY22_NODE> nodes, int x, int y, int max_avail) {
-	std::string line(x +1, ' ');
+	std::string line(x + 1, ' ');
 	std::vector<std::string> disk_map;
 
 	disk_map.clear();
@@ -72,8 +72,19 @@ void PrintMap(std::vector<DAY22_NODE> nodes, int x, int y, int max_avail) {
 		std::cout << disk_map[i].c_str() << std::endl;
 	}
 }
+int GetCoord(int x, int y) {
+	return x * 1000 + y;
+}
 
-int GetMovementSteps(std::vector<DAY22_NODE> nodes, int width, int height, int max_avail_x, int max_avail_y, int targ_x, int targ_y, int goal_x, int goal_y) {
+int GetMovementSteps(std::vector<DAY22_NODE> nodes, int width, int height, int max_avail_x, int max_avail_y) {
+	std::map<int, DAY22_NODE> map;
+
+	map.clear();
+	for (int i = 0; i < nodes.size(); i++) {
+		map.emplace(GetCoord(nodes[i].x, nodes[i].y), nodes[i]);
+	}
+
+	
 	return 0;
 }
 
@@ -129,6 +140,6 @@ int main(void) {
 	std::cout << "Result is " << result1 << std::endl;
 	std::cout << "--- part 2 ---" << std::endl;
 	//PrintMap(data, x, y, max_avail);	// for manual solving of the part 2
-	result2 = GetMovementSteps(data, x + 1, y + 1, max_avail_x, max_avail_y, 0, 0, x, 0);
+	result2 = GetMovementSteps(data, x + 1, y + 1, max_avail_x, max_avail_y);
 	std::cout << "Result is " << result2 << std::endl;
 }
