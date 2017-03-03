@@ -4,10 +4,16 @@
 #include <map>
 #include <regex>
 #include <string>
+#include <queue>
+#include <unordered_set>
 
 typedef struct {
-	int x, y, size, used, avail, use_perc;
+	int x, y, size, used, avail, use_perc, step_cnt;
 } DAY22_NODE;
+
+typedef struct {
+	int x,y, step_cnt;
+} DAY22_STEP_INFO;
 
 bool DecodeNodeInfo(std::string line, DAY22_NODE &node) {
 	std::regex node_info_regex("\\/dev\\/grid\\/node-x(\\d+)-y(\\d+)[[:blank:]]+(\\d+)T[[:blank:]]+(\\d+)T[[:blank:]]+(\\d+)T[[:blank:]]+(\\d+)%$");
@@ -72,20 +78,59 @@ void PrintMap(std::vector<DAY22_NODE> nodes, int x, int y, int max_avail) {
 		std::cout << disk_map[i].c_str() << std::endl;
 	}
 }
+
 int GetCoord(int x, int y) {
-	return x * 1000 + y;
+	return ((x & 0xFFFF) << 16) | (y & 0xFFFF);
 }
 
-int GetMovementSteps(std::vector<DAY22_NODE> nodes, int width, int height, int max_avail_x, int max_avail_y) {
+void DecodeCoord(int coord, int &x, int &y) {
+	x = (coord >> 16) & 0xFFFF;
+	y = coord & 0xFFFF;
+}
+
+int GetMovementStepsToBringEmptyDiscBeforeTagetData(std::map<int, DAY22_NODE> map, int empty_x, int empty_y, int target_x, int target_y, int max_x, int max_y) {
+	int steps = 0, target, coord;
+	std::unordered_set<int> history;
+	std::queue<DAY22_STEP_INFO> q;
+	DAY22_STEP_INFO dsi;
+
+	dsi.x = empty_x;
+	dsi.y = empty_y;
+	dsi.step_cnt = 0;
+	q.push(dsi);
+
+	target = GetCoord(target_x, target_y);
+
+	while (!q.empty()) {
+		dsi = q.front();
+		q.pop();
+		if ((dsi.x < 0) || (dsi.y <0) || (dsi.x > max_x) || (dsi.y > max_y)) {
+			continue;
+		}
+		coord = GetCoord(dsi.x, dsi.y);
+
+		if ((dsi.x == target_x) && (dsi.y == target_y)) {
+
+		}
+		dsi.step_cnt++;
+
+	}
+
+	return steps;
+}
+
+int GetMovementSteps(std::vector<DAY22_NODE> nodes, int max_x, int max_y, int max_avail_x, int max_avail_y) {
 	std::map<int, DAY22_NODE> map;
+	int steps = 0;
 
 	map.clear();
 	for (int i = 0; i < nodes.size(); i++) {
 		map.emplace(GetCoord(nodes[i].x, nodes[i].y), nodes[i]);
 	}
 
-	
-	return 0;
+	steps += GetMovementStepsToBringEmptyDiscBeforeTagetData(map, max_avail_x, max_avail_y, max_x - 2, 0, max_x, max_y);
+
+	return steps;
 }
 
 int main(void) {
