@@ -2,15 +2,9 @@
 #include <fstream>
 #include <iostream>
 #include <map>
-<<<<<<< HEAD
 #include <queue>
 #include <regex>
 #include <string>
-=======
-#include <queue>
-#include <regex>
-#include <string>
->>>>>>> 1cd63dbc44a9efdaf1cf4892f3e4f23f2d00f2d8
 #include <unordered_set>
 
 typedef struct {
@@ -18,13 +12,7 @@ typedef struct {
 } DAY22_NODE;
 
 typedef struct {
-<<<<<<< HEAD
 	int x, y, step_cnt;
-	std::vector<int> path;
-	== == == =
-				 int x,
-		  y, step_cnt;
->>>>>>> 1cd63dbc44a9efdaf1cf4892f3e4f23f2d00f2d8
 } DAY22_STEP_INFO;
 
 bool DecodeNodeInfo(std::string line, DAY22_NODE &node) {
@@ -139,7 +127,6 @@ int GetMovementStepsToBringEmptyDiscBeforeTagetData(std::map<int, DAY22_NODE> ma
 		}
 
 		dsi.step_cnt++;
-		dsi.path.push_back(coord);
 		tmp = dsi;
 		dsi.x++;
 		q.push(dsi);
