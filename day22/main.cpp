@@ -83,26 +83,23 @@ int GetCoord(int x, int y) {
 	//return ((x & 0xFFFF) << 16) | (y & 0xFFFF);
 	return (x * 1000) + y;
 }
-/*
-void DecodeCoord(int coord, int &x, int &y) {
-	x = (coord >> 16) & 0xFFFF;
-	y = coord & 0xFFFF;
-}
-*/
-int GetMovementStepsToBringEmptyDiscBeforeTagetData(std::map<int, DAY22_NODE> map, int empty_x, int empty_y, int target_x, int target_y, int max_x, int max_y) {
-	int target, coord, avail;
+
+int FindShortestWayStepCount(std::map<int, DAY22_NODE> map, int from_x, int from_y, int to_x, int to_y, int max_x, int max_y, int available, std::vector<int> disabled_coords) {
+	int target, coord;
 	std::unordered_set<int> history;
 	std::queue<DAY22_STEP_INFO> q;
 	DAY22_STEP_INFO dsi, tmp;
 
-	avail = map[GetCoord(empty_x, empty_y)].avail;
+	for (int i = 0; i < disabled_coords.size(); i++) {
+		history.emplace(disabled_coords[i]);
+	}
 
-	dsi.x = empty_x;
-	dsi.y = empty_y;
+	dsi.x = from_x;
+	dsi.y = from_y;
 	dsi.step_cnt = 0;
 	q.push(dsi);
 
-	target = GetCoord(target_x, target_y);
+	target = GetCoord(to_x, to_y);
 
 	while (!q.empty()) {
 		dsi = q.front();
@@ -122,7 +119,7 @@ int GetMovementStepsToBringEmptyDiscBeforeTagetData(std::map<int, DAY22_NODE> ma
 
 		history.emplace(coord);
 
-		if (map[coord].used > avail) {
+		if (map[coord].used > available) {
 			continue;
 		}
 
@@ -144,22 +141,51 @@ int GetMovementStepsToBringEmptyDiscBeforeTagetData(std::map<int, DAY22_NODE> ma
 	return -1;
 }
 
-int GetDancingAroundStepsCount(std::map<int, DAY22_NODE> map, int max_x, int max_y, int free_x, int free_y, int targ_x, int targ_y, int final_x, int final_y) {
-
-	return 0;
-}
-
 int GetMovementSteps(std::vector<DAY22_NODE> nodes, int max_x, int max_y, int max_avail_x, int max_avail_y) {
 	std::map<int, DAY22_NODE> map;
-	int steps = 0;
+	int steps = 0, available;
+	int xa, ya, xd, yd, tmp;
 
 	map.clear();
 	for (int i = 0; i < nodes.size(); i++) {
 		map.emplace(GetCoord(nodes[i].x, nodes[i].y), nodes[i]);
 	}
 
-	steps += GetMovementStepsToBringEmptyDiscBeforeTagetData(map, max_avail_x, max_avail_y, max_x - 1, 0, max_x, max_y);
-	steps += GetDancingAroundStepsCount(map, max_x, max_y, max_x - 1, 0, max_x, max_y, 0, 0);
+	available = map[GetCoord(max_avail_x, max_avail_y)].avail;
+
+	xa = max_avail_x;
+	ya = max_avail_y;
+	xd = max_x;
+	yd = 0;
+
+	steps += FindShortestWayStepCount(map, xa, ya, xd - 1, yd, max_x, max_y, available, std::vector<int>());
+
+	xa = xd - 1;
+	ya = yd;
+
+	if ((yd == ya) && (xd == xa + 1)) {
+		xd--;
+		xa++;
+		steps++;
+	}
+
+	while ((xd != 0) || (yd != 0)) {
+		if ((yd == ya) && (xa == xd + 1)) {
+			std::vector<int> tabu;
+			tabu.push_back(GetCoord(xd, yd));
+			steps += FindShortestWayStepCount(map, xa, ya, xd - 1, yd, max_x, max_y, available, tabu);
+			xa = xd - 1;
+		} else {
+			int z = 13;
+		}
+		if ((yd == ya) && (xd == xa + 1)) {
+			xd--;
+			xa++;
+			steps++;
+		} else {
+			int z = 13;
+		}
+	}
 
 	return steps;
 }
