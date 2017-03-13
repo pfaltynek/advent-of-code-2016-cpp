@@ -7,9 +7,14 @@
 #include <vector>
 
 //#define TEST 1
+//#define TEST12 1
 
-#ifdef TEST
+#if TEST
+#if TEST12
+const std::string input_filename = "input-test12.txt";
+#else
 const std::string input_filename = "input-test.txt";
+#endif
 #else
 const std::string input_filename = "input.txt";
 #endif
@@ -153,6 +158,8 @@ bool DecodeInstruction(std::string line, INSTRUCTION &inst) {
 
 		inst.op1 = atoi(sm.str(1).c_str());
 		inst.op2 = atoi(sm.str(2).c_str());
+
+		return true;
 	} else if (regex_match(line, sm, tgl_template)) {
 		inst.inst_type = INST_TGL;
 
@@ -166,38 +173,86 @@ bool DecodeInstruction(std::string line, INSTRUCTION &inst) {
 	return false;
 }
 
-void Trace(std::vector<INSTRUCTION> prg, int init_A, int init_B, int init_C, int init_D, int &result1) {
+void Trace(std::vector<INSTRUCTION> prg_orig, int init_A, int init_B, int init_C, int init_D, int &result1) {
 	int regs[4] = {init_A, init_B, init_C, init_D};
 	int pc = 0;
+	int val, tgl_pc;
+	std::vector<INSTRUCTION> prg(prg_orig);
 
 	while ((pc >= 0) && (pc < prg.size())) {
 		switch (prg[pc].inst_type) {
-
 			case INST_CPY:
-				//regs[prg[pc].reg1] = prg[pc].value;
-				//pc++;
+				if (prg[pc].op2_is_register) {
+					if (prg[pc].op1_is_register) {
+						regs[prg[pc].op2] = regs[prg[pc].op1];
+					} else {
+						regs[prg[pc].op2] = prg[pc].op1;
+					}
+				}
+				pc++;
 				break;
 
 			case INST_INC:
-				regs[prg[pc].op1]++;
+				if (prg[pc].op1_is_register) {
+					regs[prg[pc].op1]++;
+				}
 				pc++;
 				break;
 
 			case INST_DEC:
-				regs[prg[pc].op1]--;
+				if (prg[pc].op1_is_register) {
+					regs[prg[pc].op1]--;
+				}
 				pc++;
 				break;
 
 			case INST_JNZ:
-				/*if (regs[prg[pc].reg1]) {
-					pc += prg[pc].value;
+				if (prg[pc].op1_is_register) {
+					val = regs[prg[pc].op1];
+				} else {
+					val = prg[pc].op1;
+				}
+				if (val) {
+					if (prg[pc].op2_is_register) {
+						pc += regs[prg[pc].op2];
+					} else {
+						pc += prg[pc].op2;
+					}
 				} else {
 					pc++;
-				}*/
+				}
 				break;
 
 			case INST_TGL:
-				//pc += prg[pc].value;
+				if (prg[pc].op1_is_register) {
+					tgl_pc = pc + regs[prg[pc].op1];
+				} else {
+					tgl_pc = pc + prg[pc].op1;
+				}
+				if ((tgl_pc >= 0) && (tgl_pc < prg.size())) {
+					switch (prg[tgl_pc].inst_type) {
+						case INST_CPY:
+							prg[tgl_pc].inst_type = INST_JNZ;
+							break;
+
+						case INST_INC:
+							prg[tgl_pc].inst_type = INST_DEC;
+							break;
+
+						case INST_DEC:
+							prg[tgl_pc].inst_type = INST_INC;
+							break;
+
+						case INST_JNZ:
+							prg[tgl_pc].inst_type = INST_CPY;
+							break;
+
+						case INST_TGL:
+							prg[tgl_pc].inst_type = INST_INC;
+							break;
+					}
+				}
+				pc++;
 				break;
 		}
 	}
@@ -242,9 +297,20 @@ int main(void) {
 		input.close();
 	}
 
+#if TEST
+#if TEST12
+	Trace(prg, 0, 0, 0, 0, result1);
+	Trace(prg, 0, 0, 1, 0, result2);
+#else
+	Trace(prg, 0, 0, 0, 0, result1);
+#endif
+#else
 	Trace(prg, 7, 0, 0, 0, result1);
+#endif
 
 	std::cout << "Result is " << result1 << std::endl;
+
 	std::cout << "--- part 2 ---" << std::endl;
+	Trace(prg, 12, 0, 0, 0, result2);
 	std::cout << "Result is " << result2 << std::endl;
 }
