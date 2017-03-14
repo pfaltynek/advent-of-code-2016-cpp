@@ -8,109 +8,43 @@
 #include <unordered_set>
 
 typedef struct {
-	int x, y, size, used, avail, use_perc, step_cnt;
-} DAY22_NODE;
-
-typedef struct {
 	int x, y, step_cnt;
-} DAY22_STEP_INFO;
-
-bool DecodeNodeInfo(std::string line, DAY22_NODE &node) {
-	std::regex node_info_regex("\\/dev\\/grid\\/node-x(\\d+)-y(\\d+)[[:blank:]]+(\\d+)T[[:blank:]]+(\\d+)T[[:blank:]]+(\\d+)T[[:blank:]]+(\\d+)%$");
-	std::smatch sm;
-
-	if (std::regex_match(line, sm, node_info_regex)) {
-		node.x = atoi(sm.str(1).c_str());
-		node.y = atoi(sm.str(2).c_str());
-		node.size = atoi(sm.str(3).c_str());
-		node.used = atoi(sm.str(4).c_str());
-		node.avail = atoi(sm.str(5).c_str());
-		node.use_perc = atoi(sm.str(6).c_str());
-		return true;
-	}
-	return false;
-}
-
-int GetViableNodesPairCountBF(std::vector<DAY22_NODE> nodes) {
-	int cnt = 0;
-
-	for (int a = 0; a < nodes.size(); a++) {
-		for (int b = 0; b < nodes.size(); b++) {
-			if (a != b) {
-				if (nodes[a].used > 0) {
-					if (nodes[a].used <= nodes[b].avail) {
-						cnt++;
-					}
-				}
-			}
-		}
-	}
-
-	return cnt;
-}
-
-void PrintMap(std::vector<DAY22_NODE> nodes, int x, int y, int max_avail) {
-	std::string line(x + 1, ' ');
-	std::vector<std::string> disk_map;
-
-	disk_map.clear();
-	for (int i = 0; i <= y; i++) {
-		disk_map.push_back(line);
-	}
-
-	for (int i = 0; i < nodes.size(); i++) {
-		char symbol = '.';
-
-		if ((nodes[i].x == 0) && (nodes[i].y == 0)) {
-			symbol = 'S';
-		} else if ((nodes[i].x == x) && (nodes[i].y == 0)) {
-			symbol = 'T';
-		} else if (nodes[i].avail == max_avail) {
-			symbol = 'E';
-		} else if (nodes[i].used > max_avail) {
-			symbol = '#';
-		}
-
-		disk_map[nodes[i].y][nodes[i].x] = symbol;
-	}
-
-	for (int i = 0; i < disk_map.size(); i++) {
-		std::cout << disk_map[i].c_str() << "||" << std::endl;
-	}
-}
+} MAZE_POS;
 
 int GetCoord(int x, int y) {
 	//return ((x & 0xFFFF) << 16) | (y & 0xFFFF);
 	return (x * 1000) + y;
 }
 
-int FindShortestWayStepCount(std::map<int, DAY22_NODE> map, int from_x, int from_y, int to_x, int to_y, int max_x, int max_y, int available, std::vector<int> disabled_coords) {
+void DecodeCoord(int coord, int &x, int &y) {
+	x = coord / 1000;
+	y = coord % 1000;
+}
+
+int FindShortestWayStepCount(std::map<int, char> map, int from_x, int from_y, int to_x, int to_y, int max_x, int max_y, std::vector<char> &also_visited) {
 	int target, coord;
 	std::unordered_set<int> history;
-	std::queue<DAY22_STEP_INFO> q;
-	DAY22_STEP_INFO dsi, tmp;
+	std::queue<MAZE_POS> q;
+	MAZE_POS position, tmp;
 
-	for (int i = 0; i < disabled_coords.size(); i++) {
-		history.emplace(disabled_coords[i]);
-	}
-
-	dsi.x = from_x;
-	dsi.y = from_y;
-	dsi.step_cnt = 0;
-	q.push(dsi);
+	position.x = from_x;
+	position.y = from_y;
+	position.step_cnt = 0;
+	q.push(position);
 
 	target = GetCoord(to_x, to_y);
 
 	while (!q.empty()) {
-		dsi = q.front();
+		position = q.front();
 		q.pop();
-		if ((dsi.x < 0) || (dsi.y < 0) || (dsi.x > max_x) || (dsi.y > max_y)) {
+		if ((position.x < 0) || (position.y < 0) || (position.x > max_x) || (position.y > max_y)) {
 			continue;
 		}
-		coord = GetCoord(dsi.x, dsi.y);
+
+		coord = GetCoord(position.x, position.y);
 
 		if (coord == target) {
-			return dsi.step_cnt;
+			return position.step_cnt;
 		}
 
 		if (history.find(coord) != history.end()) {
@@ -119,28 +53,87 @@ int FindShortestWayStepCount(std::map<int, DAY22_NODE> map, int from_x, int from
 
 		history.emplace(coord);
 
-		if (map[coord].used > available) {
-			continue;
+		switch (map[coord]) {
+			case '.':
+				break;
+
+			case '#':
+				continue;
+				break;
+
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				if (std::find(also_visited.begin(), also_visited.end(), map[coord]) == also_visited.end()) {
+					also_visited.push_back(map[coord]);
+				}
+				break;
+
+			default:
+				int j = 159;
+				break;
 		}
 
-		dsi.step_cnt++;
-		tmp = dsi;
-		dsi.x++;
-		q.push(dsi);
-		dsi = tmp;
-		dsi.x--;
-		q.push(dsi);
-		dsi = tmp;
-		dsi.y++;
-		q.push(dsi);
-		dsi = tmp;
-		dsi.y--;
-		q.push(dsi);
+		position.step_cnt++;
+		tmp = position;
+		position.x++;
+		q.push(position);
+		position = tmp;
+		position.x--;
+		q.push(position);
+		position = tmp;
+		position.y++;
+		q.push(position);
+		position = tmp;
+		position.y--;
+		q.push(position);
 	}
 
 	return -1;
 }
 
+void GoThroughCheckPoints(std::map<int, char> map, std::map<char, int> check_points, int from_x, int from_y, int max_x, int max_y, int &steps_cnt, std::vector<char> checkpoints_to_visit) {
+	int to_x, to_y;
+
+	for (int i = 0; i < checkpoints_to_visit.size(); i++) {
+		std::vector<char> visited;
+		visited.clear();
+		DecodeCoord(check_points[checkpoints_to_visit[i]], to_x, to_y);
+		FindShortestWayStepCount(map, from_x, from_y, to_x, to_y, max_x, max_y, visited);
+	}
+}
+
+int GetMovementSteps(std::map<int, char> map, std::map<char, int> check_points, int max_x, int max_y, char start_chr) {
+	std::vector<char> to_visit;
+	std::map<char, int>::iterator it;
+	int x1, y1, steps;
+
+	if (check_points.find(start_chr) == check_points.end()) {
+		return -1;
+	} else {
+		DecodeCoord(check_points[start_chr], x1, y1);
+		check_points.erase(start_chr);
+	}
+
+	for (it = check_points.begin(); it != check_points.end(); ++it) {
+		to_visit.push_back(it->first);
+	}
+
+	steps = 0x7FFFFFFF;
+
+	GoThroughCheckPoints(map, check_points, x1, y1,max_x, max_y, steps, to_visit);
+
+	return steps;
+}
+
+/*
 int GetMovementSteps(std::vector<DAY22_NODE> nodes, int max_x, int max_y, int max_avail_x, int max_avail_y) {
 	std::map<int, DAY22_NODE> map;
 	int steps = 0, available;
@@ -189,20 +182,26 @@ int GetMovementSteps(std::vector<DAY22_NODE> nodes, int max_x, int max_y, int ma
 
 	return steps;
 }
-
+*/
 int main(void) {
 	std::ifstream input;
 	std::string line;
-	std::vector<DAY22_NODE> data;
-	int cnt, result1, result2, x, y, max_avail, max_avail_x, max_avail_y;
+	std::map<int, char> data;
+	std::map<char, int> check_points;
+	int cnt, result1, result2, line_len, coord;
 
 	cnt = 0;
 	result1 = 0;
 	result2 = 0;
+	line_len = -1;
 
 	std::cout << "=== Advent of Code 2016 - day 24 ====" << std::endl;
 
+#if TEST
+	input.open("input-test.txt", std::ifstream::in);
+#else
 	input.open("input.txt", std::ifstream::in);
+#endif
 
 	if (input.fail()) {
 		std::cout << "Error opening input file.\n";
@@ -210,27 +209,25 @@ int main(void) {
 	}
 
 	data.clear();
-	x = y = max_avail = max_avail_x = max_avail_y = 0;
+	check_points.clear();
 
 	while (std::getline(input, line)) {
-		DAY22_NODE node;
-		cnt++;
-		if (DecodeNodeInfo(line, node)) {
-			if (node.x > x) {
-				x = node.x;
-			}
-			if (node.y > y) {
-				y = node.y;
-			}
-			if (node.avail > max_avail) {
-				max_avail = node.avail;
-				max_avail_x = node.x;
-				max_avail_y = node.y;
-			}
-			data.push_back(node);
+		if (line_len < 0) {
+			line_len = line.size();
 		} else {
-			std::cout << "Line: '" << line << "' ignored." << std::endl;
+			if (line_len != line.size()) {
+				std::cout << "Invalid length of line " << cnt + 1 << "." << std::endl;
+				return -1;
+			}
 		}
+		for (int i = 0; i < line.size(); i++) {
+			coord = GetCoord(i, cnt);
+			data[coord] = line[i];
+			if ((line[i] >= '0') && (line[i] <= '9')) {
+				check_points[line[i]] = coord;
+			}
+		}
+		cnt++;
 	}
 
 	if (input.is_open()) {
@@ -238,10 +235,10 @@ int main(void) {
 	}
 
 	std::cout << "--- part 1 ---" << std::endl;
-	result1 = GetViableNodesPairCountBF(data);
+
+	result1 = GetMovementSteps(data, check_points, line_len - 1, cnt - 1, '0');
 	std::cout << "Result is " << result1 << std::endl;
 	std::cout << "--- part 2 ---" << std::endl;
-	//PrintMap(data, x, y, max_avail); // for manual solving of the part 2
-	result2 = GetMovementSteps(data, x, y, max_avail_x, max_avail_y);
+
 	std::cout << "Result is " << result2 << std::endl;
 }
