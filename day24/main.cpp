@@ -14,6 +14,11 @@ typedef struct {
 	std::vector<char> visited;
 } MAZE_POS;
 
+std::map<int, char> map;
+std::map<char, int> check_points;
+int max_x, max_y;
+std::map<std::string, MAZE_POS> cache;
+
 int GetCoord(int x, int y) {
 	//return ((x & 0xFFFF) << 16) | (y & 0xFFFF);
 	return (x * 1000) + y;
@@ -24,19 +29,28 @@ void DecodeCoord(int coord, int &x, int &y) {
 	y = coord % 1000;
 }
 
-int FindShortestWayStepCount(std::map<int, char> map, int from_x, int from_y, int to_x, int to_y, int max_x, int max_y, std::vector<char> &also_visited) {
+int FindShortestWayStepCount(char start, char finish, std::vector<char> &also_visited) {
 	int target, coord;
+	int to_x, to_y;
 	std::unordered_set<int> history;
 	std::queue<MAZE_POS> q;
+	std::string path;
 	MAZE_POS position, tmp;
 
-	position.x = from_x;
-	position.y = from_y;
+	path = start;
+	path += finish;
+
+	if (cache.find(path) != cache.end()) {
+		also_visited = cache[path].visited;
+		return cache[path].step_cnt;
+	}
+
+	DecodeCoord(check_points[start], position.x, position.y);
 	position.step_cnt = 0;
 	position.visited.clear();
 	q.push(position);
 
-	target = GetCoord(to_x, to_y);
+	target = check_points[finish];
 
 	while (!q.empty()) {
 		position = q.front();
@@ -48,6 +62,7 @@ int FindShortestWayStepCount(std::map<int, char> map, int from_x, int from_y, in
 		coord = GetCoord(position.x, position.y);
 
 		if (coord == target) {
+			cache[path] = position;
 			also_visited = position.visited;
 			return position.step_cnt;
 		}
@@ -76,9 +91,7 @@ int FindShortestWayStepCount(std::map<int, char> map, int from_x, int from_y, in
 			case '7':
 			case '8':
 			case '9':
-				//if (std::find(position.visited.begin(), position.visited.end(), map[coord]) == position.visited.end()) {
-					position.visited.push_back(map[coord]);
-				//}
+				position.visited.push_back(map[coord]);
 				break;
 
 			default:
@@ -104,8 +117,9 @@ int FindShortestWayStepCount(std::map<int, char> map, int from_x, int from_y, in
 	return -1;
 }
 
-void GoThroughCheckPoints(std::map<int, char> map, std::map<char, int> check_points, int from_x, int from_y, int max_x, int max_y, int steps_cnt, int &result, std::vector<char> checkpoints_to_visit) {
-	int to_x, to_y, steps;
+void GoThroughCheckPoints(char start_from, int steps_cnt, int &result1, int &result2, std::vector<char> checkpoints_to_visit) {
+	int to_x, to_y, steps, steps2;
+	char finish;
 
 	for (int i = 0; i < checkpoints_to_visit.size(); i++) {
 		std::vector<char> visited, new2visit(checkpoints_to_visit);
@@ -113,58 +127,61 @@ void GoThroughCheckPoints(std::map<int, char> map, std::map<char, int> check_poi
 
 		steps = steps_cnt;
 		visited.clear();
-		DecodeCoord(check_points[checkpoints_to_visit[i]], to_x, to_y);
-		steps += FindShortestWayStepCount(map, from_x, from_y, to_x, to_y, max_x, max_y, visited);
+		steps += FindShortestWayStepCount(start_from, checkpoints_to_visit[i], visited);
 		it = std::find(new2visit.begin(), new2visit.end(), checkpoints_to_visit[i]);
-		if (it != new2visit.end()){
+		if (it != new2visit.end()) {
 			new2visit.erase(it);
 		}
 
 		for (int j = 0; j < visited.size(); j++) {
 			it = std::find(new2visit.begin(), new2visit.end(), visited[j]);
-			if (it != new2visit.end()){
+			if (it != new2visit.end()) {
 				new2visit.erase(it);
 			}
 		}
-		if (new2visit.size()){
-			GoThroughCheckPoints(map, check_points, to_x, to_y, max_x, max_y, steps, result, new2visit);
-		}
-		else{
-			if (steps < result) {
-				result = steps;
+		if (new2visit.size()) {
+			GoThroughCheckPoints(checkpoints_to_visit[i], steps, result1, result2, new2visit);
+		} else {
+			if (steps < result1) {
+				result1 = steps;
+			}
+			steps2 = steps;
+			visited.clear();
+			steps2 += FindShortestWayStepCount('0', checkpoints_to_visit[i], visited);
+			if (steps2 < result2) {
+				result2 = steps2;
 			}
 		}
 	}
 }
 
-int GetMovementSteps(std::map<int, char> map, std::map<char, int> check_points, int max_x, int max_y, char start_chr) {
+void GetMovementSteps(char start_chr, int &result1, int &result2) {
 	std::vector<char> to_visit;
 	std::map<char, int>::iterator it;
-	int x1, y1, result;
+	int x1, y1;
+
+	result1 = -1;
+	result2 = -1;
 
 	if (check_points.find(start_chr) == check_points.end()) {
-		return -1;
-	} else {
-		DecodeCoord(check_points[start_chr], x1, y1);
-		check_points.erase(start_chr);
+		return;
 	}
 
 	for (it = check_points.begin(); it != check_points.end(); ++it) {
-		to_visit.push_back(it->first);
+		if (it->first != start_chr) {
+			to_visit.push_back(it->first);
+		}
 	}
 
-	result = 0x7FFFFFFF;
+	result1 = 0x7FFFFFFF;
+	result2 = 0x7FFFFFFF;
 
-	GoThroughCheckPoints(map, check_points, x1, y1, max_x, max_y, 0, result, to_visit);
-
-	return result;
+	GoThroughCheckPoints(start_chr, 0, result1, result2, to_visit);
 }
 
 int main(void) {
 	std::ifstream input;
 	std::string line;
-	std::map<int, char> data;
-	std::map<char, int> check_points;
 	int cnt, result1, result2, line_len, coord;
 
 	cnt = 0;
@@ -185,8 +202,9 @@ int main(void) {
 		return -1;
 	}
 
-	data.clear();
+	map.clear();
 	check_points.clear();
+	cache.clear();
 
 	while (std::getline(input, line)) {
 		if (line_len < 0) {
@@ -199,7 +217,7 @@ int main(void) {
 		}
 		for (int i = 0; i < line.size(); i++) {
 			coord = GetCoord(i, cnt);
-			data[coord] = line[i];
+			map[coord] = line[i];
 			if ((line[i] >= '0') && (line[i] <= '9')) {
 				check_points[line[i]] = coord;
 			}
@@ -207,13 +225,16 @@ int main(void) {
 		cnt++;
 	}
 
+	max_x = line_len - 1;
+	max_y = cnt - 1;
+
 	if (input.is_open()) {
 		input.close();
 	}
 
 	std::cout << "--- part 1 ---" << std::endl;
 
-	result1 = GetMovementSteps(data, check_points, line_len - 1, cnt - 1, '0');
+	GetMovementSteps('0', result1, result2);
 	std::cout << "Result is " << result1 << std::endl;
 	std::cout << "--- part 2 ---" << std::endl;
 
