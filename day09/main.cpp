@@ -4,39 +4,20 @@
 #include <regex>
 #include <string>
 
-bool DecodeMarker(std::string marker, int &length, int &count) {
-	std::regex regex_number("\\d+");
-	std::smatch sm;
-
-	if (regex_search(marker, sm, regex_number)) {
-		length = atoi(sm[0].str().c_str());
-		marker = sm.suffix().str();
-
-		if (regex_search(marker, sm, regex_number)) {
-			count = atoi(sm[0].str().c_str());
-			return true;
-		}
-	}
-
-	return false;
-}
-
 bool Unpack(std::string &input, long long &format1size, long long &format2size) {
 	long long cnt1, cnt2;
-	int	repeat_len, repeat_cnt;
-	std::regex regex_marker("[(]\\d+[xX]\\d+[)]");
+	int repeat_len, repeat_cnt;
+	std::regex regex_marker("[(](\\d+)[xX](\\d+)[)]");
 	std::smatch sm;
-	std::string marker, block;
+	std::string block;
 
 	while (regex_search(input, sm, regex_marker)) {
 		format1size += sm.prefix().str().size();
 		format2size += sm.prefix().str().size();
 
-		marker = sm[0];
+		repeat_len = atoi(sm.str(1).c_str());
+		repeat_cnt = atoi(sm.str(2).c_str());
 
-		if (!DecodeMarker(marker, repeat_len, repeat_cnt)) {
-			return false;
-		}
 		input = sm.suffix().str();
 		block = input.substr(0, repeat_len);
 		input = input.substr(repeat_len);
@@ -53,7 +34,6 @@ bool Unpack(std::string &input, long long &format1size, long long &format2size) 
 
 	return true;
 }
-
 
 int main(void) {
 	std::ifstream input;
@@ -81,7 +61,7 @@ int main(void) {
 		packed += line;
 	}
 
-	if (!Unpack(packed, result1, result2)){
+	if (!Unpack(packed, result1, result2)) {
 		return -1;
 	}
 
