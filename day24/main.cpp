@@ -7,8 +7,11 @@
 #include <string>
 #include <unordered_set>
 
+//#define TEST 1
+
 typedef struct {
 	int x, y, step_cnt;
+	std::vector<char> visited;
 } MAZE_POS;
 
 int GetCoord(int x, int y) {
@@ -30,6 +33,7 @@ int FindShortestWayStepCount(std::map<int, char> map, int from_x, int from_y, in
 	position.x = from_x;
 	position.y = from_y;
 	position.step_cnt = 0;
+	position.visited.clear();
 	q.push(position);
 
 	target = GetCoord(to_x, to_y);
@@ -44,6 +48,7 @@ int FindShortestWayStepCount(std::map<int, char> map, int from_x, int from_y, in
 		coord = GetCoord(position.x, position.y);
 
 		if (coord == target) {
+			also_visited = position.visited;
 			return position.step_cnt;
 		}
 
@@ -71,9 +76,9 @@ int FindShortestWayStepCount(std::map<int, char> map, int from_x, int from_y, in
 			case '7':
 			case '8':
 			case '9':
-				if (std::find(also_visited.begin(), also_visited.end(), map[coord]) == also_visited.end()) {
-					also_visited.push_back(map[coord]);
-				}
+				//if (std::find(position.visited.begin(), position.visited.end(), map[coord]) == position.visited.end()) {
+					position.visited.push_back(map[coord]);
+				//}
 				break;
 
 			default:
@@ -99,21 +104,43 @@ int FindShortestWayStepCount(std::map<int, char> map, int from_x, int from_y, in
 	return -1;
 }
 
-void GoThroughCheckPoints(std::map<int, char> map, std::map<char, int> check_points, int from_x, int from_y, int max_x, int max_y, int &steps_cnt, std::vector<char> checkpoints_to_visit) {
-	int to_x, to_y;
+void GoThroughCheckPoints(std::map<int, char> map, std::map<char, int> check_points, int from_x, int from_y, int max_x, int max_y, int steps_cnt, int &result, std::vector<char> checkpoints_to_visit) {
+	int to_x, to_y, steps;
 
 	for (int i = 0; i < checkpoints_to_visit.size(); i++) {
-		std::vector<char> visited;
+		std::vector<char> visited, new2visit(checkpoints_to_visit);
+		std::vector<char>::iterator it;
+
+		steps = steps_cnt;
 		visited.clear();
 		DecodeCoord(check_points[checkpoints_to_visit[i]], to_x, to_y);
-		FindShortestWayStepCount(map, from_x, from_y, to_x, to_y, max_x, max_y, visited);
+		steps += FindShortestWayStepCount(map, from_x, from_y, to_x, to_y, max_x, max_y, visited);
+		it = std::find(new2visit.begin(), new2visit.end(), checkpoints_to_visit[i]);
+		if (it != new2visit.end()){
+			new2visit.erase(it);
+		}
+
+		for (int j = 0; j < visited.size(); j++) {
+			it = std::find(new2visit.begin(), new2visit.end(), visited[j]);
+			if (it != new2visit.end()){
+				new2visit.erase(it);
+			}
+		}
+		if (new2visit.size()){
+			GoThroughCheckPoints(map, check_points, to_x, to_y, max_x, max_y, steps, result, new2visit);
+		}
+		else{
+			if (steps < result) {
+				result = steps;
+			}
+		}
 	}
 }
 
 int GetMovementSteps(std::map<int, char> map, std::map<char, int> check_points, int max_x, int max_y, char start_chr) {
 	std::vector<char> to_visit;
 	std::map<char, int>::iterator it;
-	int x1, y1, steps;
+	int x1, y1, result;
 
 	if (check_points.find(start_chr) == check_points.end()) {
 		return -1;
@@ -126,63 +153,13 @@ int GetMovementSteps(std::map<int, char> map, std::map<char, int> check_points, 
 		to_visit.push_back(it->first);
 	}
 
-	steps = 0x7FFFFFFF;
+	result = 0x7FFFFFFF;
 
-	GoThroughCheckPoints(map, check_points, x1, y1,max_x, max_y, steps, to_visit);
+	GoThroughCheckPoints(map, check_points, x1, y1, max_x, max_y, 0, result, to_visit);
 
-	return steps;
+	return result;
 }
 
-/*
-int GetMovementSteps(std::vector<DAY22_NODE> nodes, int max_x, int max_y, int max_avail_x, int max_avail_y) {
-	std::map<int, DAY22_NODE> map;
-	int steps = 0, available;
-	int xa, ya, xd, yd, tmp;
-
-	map.clear();
-	for (int i = 0; i < nodes.size(); i++) {
-		map.emplace(GetCoord(nodes[i].x, nodes[i].y), nodes[i]);
-	}
-
-	available = map[GetCoord(max_avail_x, max_avail_y)].avail;
-
-	xa = max_avail_x;
-	ya = max_avail_y;
-	xd = max_x;
-	yd = 0;
-
-	steps += FindShortestWayStepCount(map, xa, ya, xd - 1, yd, max_x, max_y, available, std::vector<int>());
-
-	xa = xd - 1;
-	ya = yd;
-
-	if ((yd == ya) && (xd == xa + 1)) {
-		xd--;
-		xa++;
-		steps++;
-	}
-
-	while ((xd != 0) || (yd != 0)) {
-		if ((yd == ya) && (xa == xd + 1)) {
-			std::vector<int> tabu;
-			tabu.push_back(GetCoord(xd, yd));
-			steps += FindShortestWayStepCount(map, xa, ya, xd - 1, yd, max_x, max_y, available, tabu);
-			xa = xd - 1;
-		} else {
-			int z = 13;
-		}
-		if ((yd == ya) && (xd == xa + 1)) {
-			xd--;
-			xa++;
-			steps++;
-		} else {
-			int z = 13;
-		}
-	}
-
-	return steps;
-}
-*/
 int main(void) {
 	std::ifstream input;
 	std::string line;
