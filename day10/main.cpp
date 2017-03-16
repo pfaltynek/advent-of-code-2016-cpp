@@ -18,8 +18,6 @@ const int part1_val2 = 17;
 const std::string input_filename = "input.txt";
 #endif
 
-std::regex regex_number("\\d+");
-
 typedef enum { OUT_EMPTY,
 			   OUT_BOT,
 			   OUT_OUTPUT } OUT_TYPE;
@@ -27,7 +25,7 @@ typedef enum { OUT_EMPTY,
 class Bot {
   public:
 	Bot();
-	Bot(std::string instruction);
+	bool Initialize(std::string instruction);
 	int GetId();
 	int GetLowValue();
 	int GetLowTarget();
@@ -53,47 +51,38 @@ Bot::Bot() {
 	val_cnt = 0;
 }
 
-Bot::Bot(std::string instruction) {
+bool Bot::Initialize(std::string instruction) {
+	std::regex bot_template("^bot (\\d+) gives low to (bot|output) (\\d+) and high to (bot|output) (\\d+)$");
+	std::smatch sm;
+
 	std::regex regex_bot("bot");
 	std::regex regex_output("output");
 	std::regex regex_low("gives low to");
 	std::regex regex_high("and high to");
-	std::smatch sm;
 	std::string strlow, strhigh;
 
-	val_cnt = 0;
-	val[0] = 0;
-	val[1] = 0;
-	regex_search(instruction, sm, regex_number);
-	id = atoi(sm[0].str().c_str());
-	instruction = sm.suffix().str();
-
-	regex_search(instruction, sm, regex_high);
-	strhigh = sm.suffix().str();
-	strlow = sm.prefix().str();
-
-	regex_search(strlow, sm, regex_low);
-	strlow = sm.suffix().str();
-
-	if (regex_search(strlow, sm, regex_bot)) {
-		low_type = OUT_TYPE::OUT_BOT;
-	} else {
-		regex_search(strlow, sm, regex_output);
-		low_type = OUT_TYPE::OUT_OUTPUT;
+	if (regex_match(instruction, sm, bot_template)) {
+		id = atoi(sm.str(1).c_str());
+		if (sm.str(2).c_str()[0] == 'o'){
+			low_type = OUT_TYPE::OUT_OUTPUT;
+		}
+		else{
+			low_type = OUT_TYPE::OUT_BOT;
+		}
+		low = atoi(sm.str(3).c_str());
+		if (sm.str(4).c_str()[0] == 'o'){
+			high_type = OUT_TYPE::OUT_OUTPUT;
+		}
+		else{
+			high_type = OUT_TYPE::OUT_BOT;
+		}
+		high = atoi(sm.str(5).c_str());
 	}
-	strlow = sm.suffix().str();
-	regex_search(strlow, sm, regex_number);
-	low = atoi(sm[0].str().c_str());
-
-	if (regex_search(strhigh, sm, regex_bot)) {
-		high_type = OUT_TYPE::OUT_BOT;
-	} else {
-		regex_search(strhigh, sm, regex_output);
-		high_type = OUT_TYPE::OUT_OUTPUT;
+	else {
+		return false;
 	}
-	strhigh = sm.suffix().str();
-	regex_search(strhigh, sm, regex_number);
-	high = atoi(sm[0].str().c_str());
+
+	return true;
 }
 
 int Bot::GetId() {
@@ -140,26 +129,14 @@ bool Bot::HandlesValues(int val1, int val2) {
 }
 //---------------------
 
-bool CheckBotInstruction(std::string instruction) {
-	std::regex bot_template("bot \\d+ gives low to (bot|output) \\d+ and high to (bot|output) \\d+");
-	std::smatch sm;
-
-	return regex_search(instruction, sm, bot_template);
-}
-
 bool DecodeValueInstruction(std::string instruction, int &value, int &bot) {
-	std::regex value_template("value \\d+ goes to bot \\d+");
+	std::regex value_template("^value (\\d+) goes to bot (\\d+)$");
 	std::smatch sm;
 
-	if (regex_search(instruction, sm, value_template)) {
-		if (regex_search(instruction, sm, regex_number)) {
-			value = atoi(sm[0].str().c_str());
-			instruction = sm.suffix().str();
-			if (regex_search(instruction, sm, regex_number)) {
-				bot = atoi(sm[0].str().c_str());
-				return true;
-			}
-		}
+	if (regex_match(instruction, sm, value_template)) {
+		value = atoi(sm.str(1).c_str());
+		bot = atoi(sm.str(2).c_str());
+		return true;
 	}
 	return false;
 }
@@ -190,6 +167,8 @@ int main(void) {
 	outputs.clear();
 
 	while (std::getline(input, line)) {
+		Bot bot;
+
 		cnt++;
 		switch (line[0]) {
 			case 'v':
@@ -208,9 +187,7 @@ int main(void) {
 				}
 				break;
 			case 'b':
-				if (CheckBotInstruction(line)) {
-					Bot bot(line);
-
+				if (bot.Initialize(line)) {
 					bots[bot.GetId()] = bot;
 				} else {
 					return -1;
@@ -235,9 +212,6 @@ int main(void) {
 					int x = 77;
 				}
 			}
-			//			if (bots[ent1.first].IsReady() && bots[ent1.first].HandlesValues(part1_val1, part1_val2)){
-			//				result1 = bots[ent1.first].GetId();
-			//			}
 		} else {
 			int x = 77;
 		}
