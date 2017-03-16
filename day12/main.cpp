@@ -20,13 +20,10 @@ std::regex regex_register("[a-d]");
 std::regex regex_operand("[a-d]|-?\\d+");
 
 typedef enum {
-	INST_CP,
-	INST_LD,
+	INST_CPY,
 	INST_INC,
 	INST_DEC,
-	INST_JNZ,
-	INST_JMP,
-	INST_NOP
+	INST_JNZ
 } INST_TYPE;
 
 #define REG_A_IDX 0
@@ -36,82 +33,9 @@ typedef enum {
 
 typedef struct {
 	INST_TYPE inst_type;
-	int value;
-	int reg1, reg2;
+	int op1, op2;
+	bool op1_is_register, op2_is_register;
 } INSTRUCTION;
-
-bool CheckInstruction(std::string instruction_line, std::string &instruction, std::string &operand1, std::string &operand2) {
-	std::regex line_template("(cpy|inc|dec|jnz) ([a-d]|-?\\d+) ?([a-d]|-?\\d+)?");
-
-	std::smatch sm;
-
-	if (regex_search(instruction_line, sm, line_template)) {
-		if (regex_search(instruction_line, sm, regex_instruction)) {
-			instruction = sm[0].str();
-			instruction_line = sm.suffix().str();
-			if (regex_search(instruction_line, sm, regex_operand)) {
-				operand1 = sm[0].str();
-				instruction_line = sm.suffix().str();
-				if (regex_search(instruction_line, sm, regex_operand)) {
-					operand2 = sm[0].str();
-				} else {
-					operand2 = "";
-				}
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-void Trace(std::vector<INSTRUCTION> prg, int c_value, int &result1) {
-	int regs[4] = {0, 0, 0, 0};
-	int pc = 0;
-
-	regs[REG_C_IDX] = c_value;
-
-	while ((pc >= 0) && (pc < prg.size())) {
-		switch (prg[pc].inst_type) {
-			case INST_CP:
-				regs[prg[pc].reg2] = regs[prg[pc].reg1];
-				pc++;
-				break;
-
-			case INST_LD:
-				regs[prg[pc].reg1] = prg[pc].value;
-				pc++;
-				break;
-
-			case INST_INC:
-				regs[prg[pc].reg1]++;
-				pc++;
-				break;
-
-			case INST_DEC:
-				regs[prg[pc].reg1]--;
-				pc++;
-				break;
-
-			case INST_JNZ:
-				if (regs[prg[pc].reg1]) {
-					pc += prg[pc].value;
-				} else {
-					pc++;
-				}
-				break;
-
-			case INST_JMP:
-				pc += prg[pc].value;
-				break;
-
-			case INST_NOP:
-				pc++;
-				break;
-		}
-	}
-
-	result1 = regs[REG_A_IDX];
-}
 
 bool DecodeRegister(std::string operand, int &reg) {
 	reg = REG_A_IDX;
@@ -138,6 +62,162 @@ bool DecodeRegister(std::string operand, int &reg) {
 	return false;
 }
 
+bool DecodeInstruction(std::string line, INSTRUCTION &inst) {
+	std::regex cpy1_template("^cpy ([a-d]) ([a-d])$");
+	std::regex cpy2_template("^cpy (-?\\d+) ([a-d])$");
+	std::regex inc_template("^inc ([a-d])$");
+	std::regex dec_template("^dec ([a-d])$");
+	std::regex jnz1_template("^jnz ([a-d]) ([a-d])?$");
+	std::regex jnz2_template("^jnz ([a-d]) (-?\\d+)?$");
+	std::regex jnz3_template("^jnz (-?\\d+) ([a-d])?$");
+	std::regex jnz4_template("^jnz (-?\\d+) (-?\\d+)?$");
+	std::smatch sm;
+
+	inst.op1_is_register = true;
+	inst.op2_is_register = true;
+
+	if (regex_match(line, sm, cpy1_template)) {
+		inst.inst_type = INST_CPY;
+
+		if (DecodeRegister(sm.str(1), inst.op1)) {
+			if (DecodeRegister(sm.str(2), inst.op2)) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	} else if (regex_match(line, sm, cpy2_template)) {
+		inst.inst_type = INST_CPY;
+		inst.op1_is_register = false;
+
+		inst.op1 = atoi(sm.str(1).c_str());
+
+		if (DecodeRegister(sm.str(2), inst.op2)) {
+			return true;
+		} else {
+			return false;
+		}
+	} else if (regex_match(line, sm, inc_template)) {
+		inst.inst_type = INST_INC;
+
+		if (DecodeRegister(sm.str(1), inst.op1)) {
+			return true;
+		} else {
+			return false;
+		}
+	} else if (regex_match(line, sm, dec_template)) {
+		inst.inst_type = INST_DEC;
+
+		if (DecodeRegister(sm.str(1), inst.op1)) {
+			return true;
+		} else {
+			return false;
+		}
+	} else if (regex_match(line, sm, jnz1_template)) {
+		inst.inst_type = INST_JNZ;
+
+		if (DecodeRegister(sm.str(1), inst.op1)) {
+			if (DecodeRegister(sm.str(2), inst.op2)) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	} else if (regex_match(line, sm, jnz2_template)) {
+		inst.inst_type = INST_JNZ;
+		inst.op2_is_register = false;
+
+		inst.op2 = atoi(sm.str(2).c_str());
+
+		if (DecodeRegister(sm.str(1), inst.op1)) {
+			return true;
+		} else {
+			return false;
+		}
+	} else if (regex_match(line, sm, jnz3_template)) {
+		inst.inst_type = INST_JNZ;
+		inst.op1_is_register = false;
+
+		inst.op1 = atoi(sm.str(1).c_str());
+
+		if (DecodeRegister(sm.str(2), inst.op2)) {
+			return true;
+		} else {
+			return false;
+		}
+	} else if (regex_match(line, sm, jnz4_template)) {
+		inst.inst_type = INST_JNZ;
+		inst.op1_is_register = false;
+		inst.op2_is_register = false;
+
+		inst.op1 = atoi(sm.str(1).c_str());
+		inst.op2 = atoi(sm.str(2).c_str());
+
+		return true;
+	}
+
+	return false;
+}
+void Trace(std::vector<INSTRUCTION> prg, int c_value, int &result1) {
+	int regs[4] = {0, 0, 0, 0};
+	int pc = 0, val;
+
+	regs[REG_C_IDX] = c_value;
+
+	while ((pc >= 0) && (pc < prg.size())) {
+		switch (prg[pc].inst_type) {
+			case INST_CPY:
+				if (prg[pc].op2_is_register) {
+					if (prg[pc].op1_is_register) {
+						regs[prg[pc].op2] = regs[prg[pc].op1];
+					} else {
+						regs[prg[pc].op2] = prg[pc].op1;
+					}
+				}
+				pc++;
+				break;
+
+			case INST_INC:
+				if (prg[pc].op1_is_register) {
+					regs[prg[pc].op1]++;
+				}
+				pc++;
+				break;
+
+			case INST_DEC:
+				if (prg[pc].op1_is_register) {
+					regs[prg[pc].op1]--;
+				}
+				pc++;
+				break;
+
+			case INST_JNZ:
+				if (prg[pc].op1_is_register) {
+					val = regs[prg[pc].op1];
+				} else {
+					val = prg[pc].op1;
+				}
+				if (val) {
+					if (prg[pc].op2_is_register) {
+						pc += regs[prg[pc].op2];
+					} else {
+						pc += prg[pc].op2;
+					}
+				} else {
+					pc++;
+				}
+				break;
+		}
+	}
+
+	result1 = regs[REG_A_IDX];
+}
+
+
 int main(void) {
 	std::ifstream input;
 	std::string line, inst, op1, op2;
@@ -162,59 +242,10 @@ int main(void) {
 	while (std::getline(input, line)) {
 		cnt++;
 		INSTRUCTION instruction;
-		instruction.value = 0;
-		instruction.reg1 = REG_A_IDX;
-		instruction.reg2 = REG_A_IDX;
 
-		if (!CheckInstruction(line, inst, op1, op2)) {
+		if (!DecodeInstruction(line, instruction)) {
 			std::cout << "Invalid instruction at line " << cnt << std::endl;
 			return -1;
-		}
-
-		switch (inst[0]) {
-			case 'c':
-				if (DecodeRegister(op1, instruction.reg1)) {
-					instruction.inst_type = INST_CP;
-					if (!DecodeRegister(op2, instruction.reg2)) {
-						std::cout << "Invalid instruction \'cpy\' at line " << cnt << std::endl;
-						return -1;
-					}
-				} else {
-					instruction.inst_type = INST_LD;
-					instruction.value = atoi(op1.c_str());
-					if (!DecodeRegister(op2, instruction.reg1)) {
-						std::cout << "Invalid instruction \'cpy\' at line " << cnt << std::endl;
-						return -1;
-					}
-				}
-				break;
-			case 'i':
-				if (!DecodeRegister(op1, instruction.reg1)) {
-					std::cout << "Invalid \'inc \'instruction at line " << cnt << std::endl;
-					return -1;
-				}
-				instruction.inst_type = INST_INC;
-				break;
-			case 'd':
-				if (!DecodeRegister(op1, instruction.reg1)) {
-					std::cout << "Invalid \'dec \'instruction at line  " << cnt << std::endl;
-					return -1;
-				}
-				instruction.inst_type = INST_DEC;
-				break;
-			case 'j':
-				if (!DecodeRegister(op1, instruction.reg1)) {
-					if (atoi(op1.c_str())) {
-						instruction.inst_type = INST_JMP;
-						instruction.value = atoi(op2.c_str());
-					} else {
-						instruction.inst_type = INST_NOP;
-					}
-				} else {
-					instruction.inst_type = INST_JNZ;
-					instruction.value = atoi(op2.c_str());
-				}
-				break;
 		}
 		prg.push_back(instruction);
 	}
