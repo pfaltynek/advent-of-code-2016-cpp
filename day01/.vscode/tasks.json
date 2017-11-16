@@ -1,14 +1,32 @@
 {
 	// See https://go.microsoft.com/fwlink/?LinkId=733558
 	// for the documentation about the tasks.json format
-	"version": "0.1.0",
-	"windows":{
-		"command": "build.bat"
-	},
-	"linux":{
-		"command": "g++",
-		"args": ["-g", "main.cpp"]
-	},
-	"isShellCommand": true,
-	"showOutput": "always"
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build AoC 2016 day 1",
+			"type": "shell",
+			"command": "g++",
+			"args": [
+				"-g", "main.cpp", "-o", "aoc-2016-day01"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": {
+				"owner": "cpp",
+				"fileLocation": ["relative", "${workspaceFolder}"],
+				"pattern": {
+					"regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+					"file": 1,
+					"line": 2,
+					"column": 3,
+					"severity": 4,
+					"message": 5
+				}
+			}
+
+		}
+	]
 }
