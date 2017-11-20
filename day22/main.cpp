@@ -80,7 +80,6 @@ void PrintMap(std::vector<DAY22_NODE> nodes, int x, int y, int max_avail) {
 }
 
 int GetCoord(int x, int y) {
-	//return ((x & 0xFFFF) << 16) | (y & 0xFFFF);
 	return (x * 1000) + y;
 }
 
@@ -229,7 +228,7 @@ int main(void) {
 			}
 			data.push_back(node);
 		} else {
-			std::cout << "Line: '" << line << "' ignored." << std::endl;
+			std::cout << "Input line " << cnt << ": '" << line << "' ignored." << std::endl;
 		}
 	}
 
@@ -241,7 +240,6 @@ int main(void) {
 	result1 = GetViableNodesPairCountBF(data);
 	std::cout << "Result is " << result1 << std::endl;
 	std::cout << "--- part 2 ---" << std::endl;
-	//PrintMap(data, x, y, max_avail); // for manual solving of the part 2
 	result2 = GetMovementSteps(data, x, y, max_avail_x, max_avail_y);
 	std::cout << "Result is " << result2 << std::endl;
 }

@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#define TEST 1
+#define TEST 0
 
 typedef struct {
 	uint32_t first, last;

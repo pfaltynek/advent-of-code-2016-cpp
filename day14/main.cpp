@@ -1,4 +1,3 @@
-
 #include "md5.h"
 #include <algorithm>
 #include <chrono>
@@ -70,7 +69,6 @@ unsigned int DoIt(std::string salt4hash, unsigned int repeats, long &time_msec) 
 				for (unsigned int j = i + 1; j < list.size(); j++) {
 					if ((list[i].character == list[j].character) && (list[j].size == 5) && ((list[i].index + 1000) >= list[j].index)) {
 						result = list[i].index;
-						//std::cout << "Key " << cnt << " at " << result << std::endl;
 						cnt++;
 						break;
 					}
@@ -93,12 +91,12 @@ int main(void) {
 	std::cout << "=== Advent of Code 2016 - day 14 ====" << std::endl;
 
 	std::cout << "--- part 1 ---" << std::endl;
-	//result1 = DoIt("abc", 0, t1);
+
 	result1 = DoIt(salt, 0, t1);
 	std::cout << "Result is " << result1 << " (" << t1 << "ms)" << std::endl;
 
 	std::cout << "--- part 2 ---" << std::endl;
-	//result2 = DoIt("abc", 2016, t2);
+	
 	result2 = DoIt(salt, 2016, t2);
 	std::cout << "Result is " << result2 << " (" << t2 << "ms)" << std::endl;
 }

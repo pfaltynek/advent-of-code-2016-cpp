@@ -11,8 +11,8 @@
 std::string result1, test1, tmp;
 int result2, test2;
 
-//#define TEST1 1
-#define TEST2 1
+#define TEST1 0
+#define TEST2 0
 
 #define GO_UP 1
 #define GO_DOWN 2

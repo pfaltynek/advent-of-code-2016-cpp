@@ -9,11 +9,11 @@
 			"type": "cppdbg",
 			"request": "launch",
 			"linux": {
-				"program": "${workspaceFolder}/aoc-2016-day01",
+				"program": "${workspaceFolder}/aoc-2016-day15",
 				"miDebuggerPath": "gdb"
 			},
 			"windows": {
-				"program": "${workspaceFolder}/aoc-2016-day01.exe",
+				"program": "${workspaceFolder}/aoc-2016-day15.exe",
 				"miDebuggerPath": "gdb.exe"
 			},
 			"args": [],

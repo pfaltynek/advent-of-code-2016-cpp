@@ -8,7 +8,7 @@ bool HasABBA(std::string part) {
 		for (int i = 1; i < part.size() - 2; i++) {
 			if (part[i] == part[i + 1]) {
 				if ((part[i - 1] != part[i]) && (part[i - 1] == part[i + 2])) {
-					std::cout << "ABBA found" << std::endl;
+					//std::cout << "ABBA found" << std::endl;
 					return true;
 				}
 			}

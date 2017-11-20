@@ -14,7 +14,7 @@
 #define MICROCHIP 1
 int result1, result2, test;
 
-#define TEST 1
+#define TEST 0
 #define STRING_HISTORY 0
 
 class FuncCall {

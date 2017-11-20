@@ -4,11 +4,11 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "build AoC 2016 day 1",
+			"label": "build AoC 2016 day 7",
 			"type": "shell",
 			"command": "g++",
 			"args": [
-				"-g", "main.cpp", "-o", "aoc-2016-day01"
+				"-g", "main.cpp", "-o", "aoc-2016-day07"
 			],
 			"group": {
 				"kind": "build",

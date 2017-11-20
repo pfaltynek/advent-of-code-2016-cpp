@@ -8,7 +8,7 @@
 #include <unordered_set>
 #include <vector>
 
-#define TEST 1
+#define TEST 0
 
 int result1, result2, test;
 
@@ -23,13 +23,6 @@ class FuncCall {
 		this->step = step;
 	}
 };
-
-/*bool ComparePairs(Pair p1, Pair p2) {
-	if (p1.x != p2.x) {
-		return p1.x < p2.x;
-	}
-	return p1.y < p2.y;
-}*/
 
 bool IsEvenParity(unsigned int v) {
 	v ^= v >> 1;
